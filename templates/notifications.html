@@ -1,0 +1,252 @@
+{% extends "navbar.html" %}
+{% block title %}Notifications - SocialApp{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <div class="notifications-container">
+    <div class="notifications-header">
+      <h2>Notifications</h2>
+      <button class="mark-all-read" aria-label="Mark all notifications as read">Mark all as read</button>
+    </div>
+
+    <div class="notification-tabs" role="tablist" aria-label="Notification filters">
+      <button class="tab active" data-tab="all" role="tab" aria-selected="true" aria-controls="tab-all" id="tab-btn-all">All</button>
+      <button class="tab" data-tab="unread" role="tab" aria-selected="false" aria-controls="tab-unread" id="tab-btn-unread">Unread</button>
+    </div>
+
+    <div class="notifications-list" id="tab-all" role="tabpanel" aria-labelledby="tab-btn-all">
+      {% for notification in notifications %}
+      <div class="notification {% if not notification.read %}unread{% endif %}" data-type="{{ notification.type }}" tabindex="0" role="article" aria-live="polite">
+        <div class="notification-icon" aria-hidden="true">
+          {% if notification.type == 'friend_request' %}
+          <i class="fas fa-user-plus"></i>
+          {% elif notification.type == 'like' %}
+          <i class="fas fa-thumbs-up"></i>
+          {% elif notification.type == 'comment' %}
+          <i class="fas fa-comment"></i>
+          {% else %}
+          <i class="fas fa-bell"></i>
+          {% endif %}
+        </div>
+        <div class="notification-content">
+          <p>{{ notification.message }}</p>
+          <span class="time">{{ notification.timestamp|timesince }} ago</span>
+        </div>
+        {% if not notification.read %}
+        <div class="unread-indicator" aria-label="Unread notification"></div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="empty-state" role="alert" aria-live="polite">
+        <i class="fas fa-bell-slash"></i>
+        <p>No notifications yet</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .notifications-container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgb(0 0 0 / 0.1);
+    padding: 24px 30px;
+    max-width: 700px;
+    margin: 40px auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .notifications-header h2 {
+    font-size: 30px;
+    color: #1877f2;
+    font-weight: 700;
+  }
+
+  .mark-all-read {
+    background: transparent;
+    border: none;
+    color: #1877f2;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: background-color 0.25s ease;
+  }
+
+  .mark-all-read:hover,
+  .mark-all-read:focus {
+    background-color: #e6f0ff;
+    outline: none;
+  }
+
+  .notification-tabs {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    padding: 12px 26px;
+    font-weight: 600;
+    font-size: 16px;
+    border: none;
+    background: none;
+    color: #65676b;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: color 0.3s ease, border-color 0.3s ease;
+    user-select: none;
+  }
+
+  .tab:hover,
+  .tab:focus {
+    color: #1877f2;
+    outline: none;
+  }
+
+  .tab.active {
+    color: #1877f2;
+    border-bottom-color: #1877f2;
+  }
+
+  .notifications-list {
+    max-height: 65vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #a1a1a1 transparent;
+  }
+  .notifications-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  .notifications-list::-webkit-scrollbar-thumb {
+    background-color: #a1a1a1;
+    border-radius: 6px;
+  }
+  .notifications-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .notification {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    position: relative;
+    background-color: #fafafa;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 0.03);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .notification.unread {
+    background-color: #e7f0fe;
+    font-weight: 600;
+  }
+
+  .notification:hover,
+  .notification:focus {
+    background-color: #f1f7ff;
+    box-shadow: 0 4px 15px rgb(24 119 242 / 0.25);
+    outline: none;
+  }
+
+  .notification-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: #1877f2;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    margin-right: 20px;
+    box-shadow: 0 0 8px rgb(24 119 242 / 0.5);
+  }
+
+  .notification-content p {
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: #050505;
+  }
+
+  .notification-content .time {
+    font-size: 13px;
+    color: #888;
+    font-style: italic;
+  }
+
+  .unread-indicator {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 12px;
+    height: 12px;
+    background-color: #f02849;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #f02849aa;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #999;
+    margin-top: 60px;
+    font-size: 18px;
+    user-select: none;
+  }
+
+  .empty-state i {
+    font-size: 50px;
+    margin-bottom: 20px;
+    color: #ccc;
+  }
+</style>
+
+<script>
+  // Basic tab switching functionality (expand as needed)
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.tab');
+    const notificationsList = document.querySelector('.notifications-list');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+
+        const filter = tab.dataset.tab;
+        if(filter === 'all') {
+          notificationsList.querySelectorAll('.notification').forEach(n => n.style.display = 'flex');
+        } else if(filter === 'unread') {
+          notificationsList.querySelectorAll('.notification').forEach(n => {
+            n.style.display = n.classList.contains('unread') ? 'flex' : 'none';
+          });
+        }
+      });
+    });
+
+    document.querySelector('.mark-all-read').addEventListener('click', () => {
+      // TODO: Implement AJAX call to mark all notifications as read
+      document.querySelectorAll('.notification.unread').forEach(n => {
+        n.classList.remove('unread');
+        const indicator = n.querySelector('.unread-indicator');
+        if(indicator) indicator.remove();
+      });
+    });
+  });
+</script>
+
+{% endblock %}

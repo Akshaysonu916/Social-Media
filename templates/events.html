@@ -1,0 +1,181 @@
+{% extends "navbar.html" %}
+
+{% block content %}
+<div class="events-page">
+  <!-- Hero Section -->
+  <div class="hero-section bg-primary text-white py-5">
+    <div class="container text-center">
+      <h1 class="display-4 fw-bold">Upcoming Events</h1>
+      <p class="lead">Discover exciting activities and connect with our community</p>
+      <div class="mt-4">
+        <button class="btn btn-light btn-lg me-2">Browse Events</button>
+        <button class="btn btn-outline-light btn-lg">Submit an Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container py-5">
+    <!-- Event Filters -->
+    <div class="row mb-4">
+      <div class="col-md-8 mx-auto">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="eventType" class="form-label">Event Type</label>
+                <select class="form-select" id="eventType">
+                  <option selected>All Events</option>
+                  <option>Workshops</option>
+                  <option>Conferences</option>
+                  <option>Social Gatherings</option>
+                  <option>Networking</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="eventDate" class="form-label">Date Range</label>
+                <select class="form-select" id="eventDate">
+                  <option selected>Upcoming</option>
+                  <option>This Week</option>
+                  <option>This Month</option>
+                  <option>Next 3 Months</option>
+                </select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Apply Filters</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="row g-4">
+      <!-- Event Card 1 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="card event-card h-100 shadow-sm">
+          <div class="event-badge bg-danger">Featured</div>
+          <img src="https://via.placeholder.com/400x250?text=Tech+Conference" class="card-img-top" alt="Tech Conference">
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge bg-info text-dark">Conference</span>
+              <span class="text-muted"><i class="far fa-calendar-alt me-1"></i> June 15, 2023</span>
+            </div>
+            <h5 class="card-title">Annual Tech Conference</h5>
+            <p class="card-text">Join us for the biggest technology event of the year featuring industry leaders and innovative workshops.</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-map-marker-alt me-1"></i> Convention Center</span>
+              <button class="btn btn-sm btn-outline-primary">Details</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Card 2 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="card event-card h-100 shadow-sm">
+          <img src="https://via.placeholder.com/400x250?text=Networking" class="card-img-top" alt="Networking Event">
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge bg-warning text-dark">Networking</span>
+              <span class="text-muted"><i class="far fa-calendar-alt me-1"></i> June 22, 2023</span>
+            </div>
+            <h5 class="card-title">Summer Networking Mixer</h5>
+            <p class="card-text">Connect with professionals from various industries in a relaxed summer evening setting.</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-map-marker-alt me-1"></i> Downtown Lounge</span>
+              <button class="btn btn-sm btn-outline-primary">Details</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Card 3 -->
+      <div class="col-lg-4 col-md-6">
+        <div class="card event-card h-100 shadow-sm">
+          <div class="event-badge bg-success">New</div>
+          <img src="https://via.placeholder.com/400x250?text=Workshop" class="card-img-top" alt="Workshop">
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge bg-primary">Workshop</span>
+              <span class="text-muted"><i class="far fa-calendar-alt me-1"></i> July 5, 2023</span>
+            </div>
+            <h5 class="card-title">Digital Marketing Workshop</h5>
+            <p class="card-text">Hands-on training session covering the latest trends and tools in digital marketing.</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-map-marker-alt me-1"></i> Business Center</span>
+              <button class="btn btn-sm btn-outline-primary">Details</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- View More Button -->
+    <div class="text-center mt-5">
+      <button class="btn btn-primary px-4 py-2">View All Events</button>
+    </div>
+
+    <!-- Newsletter Section -->
+    <div class="row mt-5">
+      <div class="col-lg-8 mx-auto">
+        <div class="card bg-light border-0">
+          <div class="card-body p-4 text-center">
+            <h3 class="mb-3">Stay Updated on Upcoming Events</h3>
+            <p class="mb-4">Subscribe to our newsletter and never miss an important event</p>
+            <div class="input-group mb-3 mx-auto" style="max-width: 500px;">
+              <input type="email" class="form-control" placeholder="Your email address">
+              <button class="btn btn-primary" type="button">Subscribe</button>
+            </div>
+            <small class="text-muted">We respect your privacy. Unsubscribe at any time.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .events-page {
+    background-color: #f8f9fa;
+  }
+  
+  .hero-section {
+    background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%);
+    margin-bottom: 2rem;
+  }
+  
+  .event-card {
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+  }
+  
+  .event-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+  
+  .event-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.8rem;
+    z-index: 1;
+  }
+  
+  .card-img-top {
+    height: 200px;
+    object-fit: cover;
+  }
+</style>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+{% endblock %}

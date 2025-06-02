@@ -1,0 +1,368 @@
+{% extends "navbar.html" %}
+{% block title %}Messages - SocialApp{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="messages-container">
+        <!-- Left sidebar - Conversation list -->
+        <div class="conversations-sidebar">
+            <div class="messages-header">
+                <h2>Messages</h2>
+                <button class="new-message-btn">
+                    <i class="fas fa-edit"></i> New Message
+                </button>
+            </div>
+            
+            <div class="search-conversations">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search messages">
+            </div>
+            
+            <div class="conversation-list">
+                {% for conversation in conversations %}
+                <div class="conversation {% if conversation.unread %}unread{% endif %}">
+                    <div class="user-avatar">
+                        <img src="{{ conversation.participant.profile_pic.url }}" alt="{{ conversation.participant.username }}">
+                    </div>
+                    <div class="conversation-details">
+                        <div class="conversation-header">
+                            <span class="username">{{ conversation.participant.username }}</span>
+                            <span class="time">{{ conversation.last_message.timestamp|timesince }} ago</span>
+                        </div>
+                        <p class="preview">{{ conversation.last_message.content|truncatechars:30 }}</p>
+                        {% if conversation.unread %}
+                        <span class="unread-badge"></span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-comments"></i>
+                    <p>No conversations yet</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Right side - Message area -->
+        <div class="message-area">
+            {% if active_conversation %}
+            <div class="message-header">
+                <div class="recipient-info">
+                    <div class="user-avatar">
+                        <img src="{{ active_conversation.participant.profile_pic.url }}" alt="{{ active_conversation.participant.username }}">
+                    </div>
+                    <span>{{ active_conversation.participant.username }}</span>
+                </div>
+            </div>
+            
+            <div class="messages">
+                {% for message in active_conversation.messages %}
+                <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                    <p>{{ message.content }}</p>
+                    <span class="timestamp">{{ message.timestamp|time }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="message-input">
+                <input type="text" placeholder="Type a message...">
+                <button class="send-btn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            {% else %}
+            <div class="empty-message-area">
+                <i class="fas fa-comment-dots"></i>
+                <h3>Select a conversation</h3>
+                <p>Or start a new one</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .messages-container {
+        display: flex;
+        height: calc(100vh - 70px);
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .conversations-sidebar {
+        width: 350px;
+        border-right: 1px solid #eee;
+        overflow-y: auto;
+    }
+    
+    .messages-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .new-message-btn {
+        background-color: #1877f2;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .search-conversations {
+        padding: 10px 15px;
+        position: relative;
+    }
+    
+    .search-conversations input {
+        width: 100%;
+        padding: 8px 10px 8px 30px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        background-color: #f0f2f5;
+    }
+    
+    .search-conversations i {
+        position: absolute;
+        left: 25px;
+        top: 18px;
+        color: #65676b;
+    }
+    
+    .conversation-list {
+        padding: 5px 0;
+    }
+    
+    .conversation {
+        display: flex;
+        padding: 10px 15px;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .conversation:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .conversation.unread {
+        background-color: #f0f8ff;
+    }
+    
+    .conversation .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 10px;
+        overflow: hidden;
+    }
+    
+    .conversation .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .conversation-details {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .conversation-header {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .username {
+        font-weight: 600;
+    }
+    
+    .time {
+        font-size: 12px;
+        color: #65676b;
+    }
+    
+    .preview {
+        font-size: 14px;
+        color: #65676b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 3px;
+    }
+    
+    .unread-badge {
+        position: absolute;
+        right: 15px;
+        bottom: 15px;
+        width: 10px;
+        height: 10px;
+        background-color: #1877f2;
+        border-radius: 50%;
+    }
+    
+    .message-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .message-header {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+    }
+    
+    .recipient-info {
+        display: flex;
+        align-items: center;
+    }
+    
+    .recipient-info .user-avatar {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
+    }
+    
+    .messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+    }
+    
+    .message {
+        max-width: 60%;
+        padding: 10px 15px;
+        border-radius: 18px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    
+    .message.sent {
+        background-color: #1877f2;
+        color: white;
+        margin-left: auto;
+    }
+    
+    .message.received {
+        background-color: #e4e6eb;
+        color: #050505;
+        margin-right: auto;
+    }
+    
+    .message .timestamp {
+        font-size: 11px;
+        display: block;
+        text-align: right;
+        margin-top: 5px;
+        opacity: 0.8;
+    }
+    
+    .message-input {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #eee;
+    }
+    
+    .message-input input {
+        flex: 1;
+        padding: 10px 15px;
+        border-radius: 20px;
+        border: 1px solid #ddd;
+        margin-right: 10px;
+    }
+    
+    .send-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #1877f2;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .empty-state, .empty-message-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: #65676b;
+    }
+    
+    .empty-state i, .empty-message-area i {
+        font-size: 50px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+    
+    @media (max-width: 768px) {
+        .conversations-sidebar {
+            width: 100%;
+        }
+        
+        .message-area {
+            display: none;
+        }
+        
+        .message-area.active {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 100;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // In a real app, you would have JavaScript to:
+    // - Load conversations via AJAX
+    // - Handle sending messages
+    // - Mark messages as read
+    // - Implement real-time updates
+    
+    // Example: Toggle conversation on mobile
+    const conversations = document.querySelectorAll('.conversation');
+    conversations.forEach(conv => {
+        conv.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                document.querySelector('.message-area').classList.add('active');
+            }
+        });
+    });
+    
+    // Back button for mobile
+    const backBtn = document.createElement('button');
+    backBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+    backBtn.className = 'back-btn';
+    backBtn.style.display = 'none';
+    document.querySelector('.message-header').prepend(backBtn);
+    
+    backBtn.addEventListener('click', function() {
+        document.querySelector('.message-area').classList.remove('active');
+    });
+    
+    function checkScreenSize() {
+        if (window.innerWidth <= 768) {
+            backBtn.style.display = 'block';
+        } else {
+            backBtn.style.display = 'none';
+        }
+    }
+    
+    window.addEventListener('resize', checkScreenSize);
+    checkScreenSize();
+});
+</script>
+{% endblock %}

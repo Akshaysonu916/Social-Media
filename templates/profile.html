@@ -1,0 +1,180 @@
+{% extends "navbar.html" %}
+{% load static %}
+{% block title %}Profile - SocialApp{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {% if user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+            {% else %}
+                <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="avatar-img">
+            {% endif %}
+        </div>
+        <div>
+            <h2 id="display-name">{{ user.get_full_name|default:user.username }}</h2>
+            <p id="display-bio">{{ user.bio }}</p>
+            
+            <div class="profile-actions">
+                <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+                <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-details">
+        <div class="detail-row">
+            <div class="detail-label">Email</div>
+            <div class="detail-value">{{ user.email }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Location</div>
+            <div class="detail-value">{{ user.location }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Joined</div>
+            <div class="detail-value">{{ user.date_joined|date:"F j, Y" }}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Bio</div>
+            <div class="detail-value" id="display-bio-full">{{ user.bio }}</div>
+        </div>
+    </div>
+
+    <div class="edit-form" style="display: none;">
+        <h3>Edit Profile</h3>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="detail-row">
+                <div class="detail-label">Profile Picture</div>
+                <div class="detail-value">
+                    <input type="file" name="profile_picture" accept="image/*">
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Name</div>
+                <div class="detail-value">
+                    <input type="text" name="name" value="{{ user.get_full_name|default:user.username }}">
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Email</div>
+                <div class="detail-value">
+                    <input type="email" name="email" value="{{ user.email }}">
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Location</div>
+                <div class="detail-value">
+                    <input type="text" name="location" value="{{ user.location }}">
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Bio</div>
+                <div class="detail-value">
+                    <textarea name="bio">{{ user.bio }}</textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        max-width: 700px;
+        margin: 30px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+        font-family: Arial, sans-serif;
+    }
+
+    .profile-header {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .avatar-img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #ccc;
+    }
+
+    .profile-actions {
+        margin-top: 15px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .detail-value {
+        color: #333;
+    }
+
+    .edit-form {
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background-color: #1877f2;
+        color: white;
+        margin-right: 10px;
+    }
+
+    .btn-secondary {
+        background-color: #e4e6eb;
+        color: #050505;
+    }
+</style>
+
+<script>
+    const editBtn = document.getElementById('edit-profile-btn');
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    const editForm = document.querySelector('.edit-form');
+    const profileDetails = document.querySelector('.profile-details');
+    const profileHeader = document.querySelector('.profile-header');
+
+    editBtn.addEventListener('click', () => {
+        editForm.style.display = 'block';
+        profileDetails.style.display = 'none';
+        profileHeader.style.display = 'none';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        editForm.style.display = 'none';
+        profileDetails.style.display = 'block';
+        profileHeader.style.display = 'block';
+    });
+</script>
+{% endblock %}
