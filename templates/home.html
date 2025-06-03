@@ -3,430 +3,385 @@
 {% block title %}Home - SocialApp{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #1877f2;
-            --secondary-color: #42b72a;
-            --bg-color: #f0f2f5;
-            --card-color: #ffffff;
-            --text-primary: #050505;
-            --text-secondary: #65676b;
-            --divider-color: #ced0d4;
-        }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
+<style>
+    :root {
+        --primary-color: #1877f2;
+        --secondary-color: #42b72a;
+        --bg-color: #f0f2f5;
+        --card-color: #ffffff;
+        --text-primary: #050505;
+        --text-secondary: #65676b;
+        --divider-color: #ced0d4;
+    }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-        }
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
 
-        /* Main Content */
-        .main-content {
-            display: flex;
-            padding-top: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            gap: 16px;
-        }
+    .main-content {
+        display: flex;
+        padding-top: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        gap: 16px;
+    }
 
-        /* Left Sidebar */
+    .left-sidebar, .right-sidebar {
+        width: 25%;
+        position: sticky;
+        top: 20px;
+        height: calc(100vh - 20px);
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .center-feed {
+        width: 50%;
+    }
+
+    .profile-card, .sidebar-card, .create-post, .empty-feed, .stories-container {
+        background-color: var(--card-color);
+        border-radius: 8px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        margin-bottom: 16px;
+    }
+
+    .profile-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .user-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #ddd;
+    }
+
+    .profile-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+    }
+
+    .sidebar-menu li a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px;
+        text-decoration: none;
+        color: var(--text-primary);
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+    }
+
+    .sidebar-menu li a:hover {
+        background-color: #e4e6eb;
+    }
+
+    .sidebar-menu i {
+        width: 24px;
+        text-align: center;
+        color: var(--primary-color);
+    }
+
+    /* Stories Section */
+    .stories {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 8px 0;
+        scrollbar-width: none;
+    }
+
+    .stories::-webkit-scrollbar {
+        display: none;
+    }
+
+    .story {
+        min-width: 120px;
+        height: 200px;
+        border-radius: 8px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+    }
+
+    .story:hover {
+        transform: scale(1.02);
+    }
+
+    .story-add {
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        flex-direction: column;
+    }
+
+    .story-add-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px;
+        position: relative;
+        height: 100%;
+        justify-content: flex-end;
+    }
+
+    .story-add i {
+        font-size: 24px;
+        background: white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+    }
+
+    .story-add span {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .profile-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 3px solid var(--primary-color);
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        object-fit: cover;
+    }
+
+    .username {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Create Post */
+    .post-input {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .post-input input {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 20px;
+        background-color: #f0f2f5;
+        border: none;
+        font-size: 14px;
+    }
+
+    .post-options {
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px solid var(--divider-color);
+        padding-top: 8px;
+    }
+
+    .post-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .post-option:hover {
+        background-color: #f0f2f5;
+    }
+
+    .post-option i {
+        color: var(--secondary-color);
+    }
+
+    /* Right Sidebar */
+    .card-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+    }
+
+    .find-people {
+        display: flex;
+        gap: 8px;
+    }
+
+    .find-people input {
+        flex: 1;
+        padding: 10px 16px;
+        border: 1px solid var(--divider-color);
+        border-radius: 20px;
+        font-size: 14px;
+    }
+
+    .find-people button {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .find-people button:hover {
+        background-color: #166fe5;
+    }
+
+    @media (max-width: 1200px) {
         .left-sidebar {
-            width: 25%;
-            position: sticky;
-            top: 20px;
-            height: calc(100vh - 20px);
-            overflow-y: auto;
-            padding: 8px;
+            width: 30%;
         }
-
-        .profile-card {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-        }
-
-        .profile-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .profile-avatar, .user-avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            object-fit: cover;
-            background-color: #ddd;
-            flex-shrink: 0;
-        }
-
-        .profile-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: var(--text-primary);
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        /* Make sidebar menu items links with no underline and full hover */
-        .sidebar-menu li {
-            margin-bottom: 8px;
-        }
-
-        .sidebar-menu li a {
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .sidebar-menu li a:hover {
-            background-color: #f0f2f5;
-            text-decoration: none;
-        }
-
-        .sidebar-menu i {
-            width: 24px;
-            text-align: center;
-            color: var(--primary-color);
-        }
-
-        /* Center Feed */
         .center-feed {
-            width: 50%;
+            width: 70%;
         }
-
-        .stories {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-        }
-
-        .story {
-            min-width: 100px;
-            height: 180px;
-            border-radius: 8px;
-            position: relative;
-            cursor: pointer;
-            flex: 1;
-            background-color: #ddd;
-        }
-
-        .story-add {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-primary);
-        }
-
-        .story-add i {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: var(--primary-color);
-        }
-
-        .story-add span {
-            font-size: 12px;
-        }
-
-        .create-post {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-        }
-
-        .post-input {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .post-input input {
-            flex: 1;
-            padding: 10px 16px;
-            border-radius: 20px;
-            border: none;
-            background-color: #f0f2f5;
-            font-size: 14px;
-        }
-
-        .post-options {
-            display: flex;
-            justify-content: space-between;
-            padding-top: 8px;
-            border-top: 1px solid var(--divider-color);
-        }
-
-        .post-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .post-option:hover {
-            background-color: #f0f2f5;
-        }
-
-        .post-option i {
-            color: var(--secondary-color);
-        }
-
-        .empty-feed {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            padding: 40px 16px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-            text-align: center;
-            color: var(--text-secondary);
-        }
-
-        /* Right Sidebar */
         .right-sidebar {
-            width: 25%;
-            position: sticky;
-            top: 20px;
-            height: calc(100vh - 20px);
-            overflow-y: auto;
-            padding: 8px;
+            display: none;
         }
+    }
 
-        .sidebar-card {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
+    @media (max-width: 768px) {
+        .left-sidebar {
+            display: none;
         }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-secondary);
+        .center-feed {
+            width: 100%;
+            padding: 0 8px;
         }
+    }
+</style>
 
-        .find-people {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .find-people input {
-            padding: 10px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--divider-color);
-            font-size: 14px;
-        }
-
-        .find-people button {
-            padding: 10px;
-            border-radius: 20px;
-            border: none;
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .find-people button:hover {
-            background-color: #166fe5;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .left-sidebar {
-                width: 30%;
-            }
-            .center-feed {
-                width: 70%;
-            }
-            .right-sidebar {
-                display: none;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .left-sidebar {
-                display: none;
-            }
-            .center-feed {
-                width: 100%;
-                padding: 0 8px;
-            }
-        }
-    </style>
-
-    <div class="main-content">
-        <!-- Left Sidebar -->
-        <div class="left-sidebar">
-            <div class="profile-card">
-                <div class="profile-info">
-                    {% if user.is_authenticated and user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="user-avatar" />
-                    {% else %}
+<div class="main-content">
+    <!-- Left Sidebar -->
+    <div class="left-sidebar">
+        <div class="profile-card">
+            <div class="profile-info">
+                {% if user.is_authenticated and user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="user-avatar" />
+                {% else %}
                     <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="user-avatar" />
-                    {% endif %}
-                    <div class="profile-name">{{ user.username }}</div>
-                </div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="{% url 'friends' %}">
-                            <i class="fas fa-user-friends"></i>
-                            <span>Friends</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'saved' %}">
-                            <i class="fas fa-bookmark"></i>
-                            <span>Saved</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'groups' %}">
-                            <i class="fas fa-users"></i>
-                            <span>Groups</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'watch' %}">
-                            <i class="fas fa-video"></i>
-                            <span>Watch</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'memories' %}">
-                            <i class="fas fa-clock"></i>
-                            <span>Memories</span>
-                        </a>
-                    </li>
-                </ul>
+                {% endif %}
+                <div class="profile-name">{{ user.username }}</div>
             </div>
-
-            <div class="sidebar-card">
-                <div class="card-title">Shortcuts</div>
-                <ul class="sidebar-menu">
-                    <li>
-                        <a href="{% url 'explore' %}">
-                            <i class="fas fa-hashtag"></i>
-                            <span>Explore</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'events' %}">
-                            <i class="fas fa-calendar"></i>
-                            <span>Events</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'gaming' %}">
-                            <i class="fas fa-gaming"></i>
-                            <span>Gaming</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- Center Feed -->
-        <div class="center-feed">
-            <!-- Stories -->
-            <div class="stories">
-                <div class="story story-add">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Create Story</span>
-                </div>
-                <div class="story"></div>
-                <div class="story"></div>
-                <div class="story"></div>
-                <div class="story"></div>
-            </div>
-
-            <!-- Create Post -->
-            <div class="create-post">
-                <div class="post-input">
-                    <div class="user-avatar"></div>
-                    <input type="text" placeholder="What's on your mind?">
-                </div>
-                <div class="post-options">
-                    <div class="post-option">
-                        <i class="fas fa-video"></i>
-                        <span>Live Video</span>
-                    </div>
-                    <div class="post-option">
-                        <i class="fas fa-images"></i>
-                        <span>Photo/Video</span>
-                    </div>
-                    <div class="post-option">
-                        <i class="fas fa-smile"></i>
-                        <span>Feeling/Activity</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Empty Feed State -->
-            <div class="empty-feed">
-                <h3>Welcome to SocialApp!</h3>
-                <p>Connect with friends or follow interesting pages to see posts in your feed.</p>
-            </div>
-        </div>
-
-        <!-- Right Sidebar -->
-        <div class="right-sidebar">
-            <div class="sidebar-card">
-                <div class="card-title">Find People</div>
-                <div class="find-people">
-                    <input type="text" placeholder="Search by name or email">
-                    <button>Search</button>
-                </div>
-            </div>
-
-            <div class="sidebar-card">
-                <div class="card-title">Suggested Connections</div>
-                <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
-                    <i class="fas fa-user-friends" style="font-size: 24px; margin-bottom: 8px;"></i>
-                    <p>Find people you know and expand your network.</p>
-                </div>
-            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'friends' %}"><i class="fas fa-user-friends"></i>Friends</a></li>
+                <li><a href="{% url 'saved' %}"><i class="fas fa-bookmark"></i>Saved</a></li>
+                <li><a href="{% url 'groups' %}"><i class="fas fa-users"></i>Groups</a></li>
+                <li><a href="{% url 'watch' %}"><i class="fas fa-video"></i>Watch</a></li>
+                <li><a href="{% url 'memories' %}"><i class="fas fa-clock"></i>Memories</a></li>
+            </ul>
         </div>
     </div>
 
-    <script>
-        // Optional JS for interaction
-        const stories = document.querySelector('.stories');
-        const addStory = document.querySelector('.story-add');
-        addStory.addEventListener('click', () => {
-            alert('Create Story clicked!');
-        });
-    </script>
+    <!-- Center Feed -->
+    <div class="center-feed">
+        <!-- Stories -->
+        <div class="stories-container">
+            <div class="stories">
+                <!-- Add Story -->
+                <a href="{% url 'create_story' %}" class="story story-add">
+                    <div class="story-add-content">
+                        {% if user.is_authenticated and user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" class="profile-avatar" />
+                        {% else %}
+                            <img src="{% static 'default-avatar.png' %}" class="profile-avatar" />
+                        {% endif %}
+                        <i class="fas fa-plus"></i>
+                        <span>Create Story</span>
+                    </div>
+                </a>
+
+                <!-- User Stories -->
+                {% for story in stories %}
+                    <a href="{% url 'story_detail' story.id %}" class="story"
+                       style="background-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6)), url('{% if story.image %}{{ story.image.url }}{% else %}{% static 'default-story.jpg' %}{% endif %}')">
+                        {% if story.user.profile_picture %}
+                            <img src="{{ story.user.profile_picture.url }}" class="profile-avatar" />
+                        {% else %}
+                            <img src="{% static 'default-avatar.png' %}" class="profile-avatar" />
+                        {% endif %}
+                        <div class="username">{{ story.user.username }}</div>
+                    </a>
+                {% empty %}
+                    <div style="padding: 16px; color: var(--text-secondary);">
+                        No stories yet. Be the first to post!
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Create Post -->
+        <div class="create-post">
+            <div class="post-input">
+                {% if user.is_authenticated and user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" class="user-avatar" />
+                {% else %}
+                    <img src="{% static 'default-avatar.png' %}" class="user-avatar" />
+                {% endif %}
+                <input type="text" placeholder="What's on your mind?" />
+            </div>
+            <div class="post-options">
+                <div class="post-option"><i class="fas fa-video"></i>Live Video</div>
+                <div class="post-option"><i class="fas fa-images"></i>Photo/Video</div>
+                <div class="post-option"><i class="fas fa-smile"></i>Feeling/Activity</div>
+            </div>
+        </div>
+
+        <!-- Empty Feed -->
+        <div class="empty-feed">
+            <h3>Welcome to SocialApp!</h3>
+            <p>Connect with friends or follow pages to see posts here.</p>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="right-sidebar">
+        <div class="sidebar-card">
+            <div class="card-title">Find People</div>
+            <div class="find-people">
+                <input type="text" placeholder="Search by name or email" />
+                <button>Search</button>
+            </div>
+        </div>
+        <div class="sidebar-card">
+            <div class="card-title">Suggested Connections</div>
+            <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                <i class="fas fa-user-friends" style="font-size: 24px; margin-bottom: 8px;"></i>
+                <p>Find people you know and grow your network.</p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

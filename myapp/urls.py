@@ -25,6 +25,11 @@ urlpatterns = [
     path('explore/', views.explore_view, name='explore'),
     path('events/', views.events_view, name='events'),
     path('gaming/', views.gaming_view, name='gaming'),
-    
+
+
+
+    # Story URLs
+    path('story/create/', views.create_story, name='create_story'),
+    path('stories/<int:pk>/', views.story_detail, name='story_detail'),
 
 ]

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import CustomUser
+from .models import *
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True)  # make sure email is required
@@ -18,3 +18,19 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomLoginForm(AuthenticationForm):
     username = forms.CharField(label="Username", max_length=150 ,required=True)
+
+
+
+# story forms
+class StoryForm(forms.ModelForm):
+    class Meta:
+        model = Story
+        fields = ['image', 'video', 'caption']
+
+    def clean(self):
+        cleaned = super().clean()
+        image = cleaned.get('image')
+        video = cleaned.get('video')
+        if not image and not video:
+            raise forms.ValidationError("You must upload either an image or a video.")
+        return cleaned

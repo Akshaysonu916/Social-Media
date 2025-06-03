@@ -1,14 +1,21 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
-from .forms import CustomUserCreationForm, CustomLoginForm
+from django.contrib.auth import login, logout, authenticate , get_user_model
+from django.shortcuts import get_object_or_404
+from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from datetime import timedelta
+from .models import Story
+
 
 # Create your views here.
 
 @login_required
-def home(request):
-    return render(request, 'home.html')
+def home_view(request):
+    now = timezone.now()
+    stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24)).order_by('-created_at')
+    return render(request, 'home.html', {'stories': stories})
 
 def signup_view(request):
     if request.method == 'POST':
@@ -44,8 +51,8 @@ def logout_view(request):
 
 
 
-def home_view(request):
-    return render(request, 'home.html')
+# def home_view(request):
+#     return render(request, 'home.html')
 
 
 @login_required
@@ -115,3 +122,33 @@ def events_view(request):
 
 def gaming_view(request):
     return render(request, 'gaming.html')
+
+
+
+# story views
+@login_required
+def create_story(request):
+    """
+    Allow logged-in users to upload a new story (image or video).
+    """
+    if request.method == 'POST':
+        form = StoryForm(request.POST, request.FILES)
+        if form.is_valid():
+            story = form.save(commit=False)
+            story.user = request.user
+            story.save()
+            return redirect('home')
+    else:
+        form = StoryForm()
+    return render(request, 'story_form.html', {'form': form})
+
+
+def story_detail(request, pk):
+    story = get_object_or_404(Story, pk=pk)
+    return render(request, 'story_detail.html', {'story': story})
+
+def story_list(request):
+    from datetime import timedelta
+    now = timezone.now()
+    stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24))
+    return render(request, 'home.html', {'stories': stories})

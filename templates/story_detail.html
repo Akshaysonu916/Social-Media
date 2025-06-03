@@ -1,0 +1,195 @@
+{% extends 'navbar.html' %}
+{% load static %}
+{% block title %}{{ story.user.username }}'s Story - SocialApp{% endblock %}
+
+{% block content %}
+<style>
+    .story-viewer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .story-header {
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        color: white;
+    }
+
+    .story-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .story-user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .story-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    .story-content {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .story-media {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+
+    .story-progress {
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        gap: 5px;
+        padding: 10px;
+    }
+
+    .progress-bar {
+        height: 3px;
+        background-color: rgba(255, 255, 255, 0.3);
+        flex-grow: 1;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background-color: white;
+        width: 0%;
+    }
+
+    .story-actions {
+        position: absolute;
+        bottom: 20px;
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .story-action-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+</style>
+
+<div class="story-viewer">
+    <div class="story-header">
+        <div class="story-user">
+            {% if story.user.profile_picture %}
+                <img src="{{ story.user.profile_picture.url }}" class="story-user-avatar" alt="{{ story.user.username }}">
+            {% else %}
+                <img src="{% static 'default-avatar.png' %}" class="story-user-avatar" alt="Default Avatar">
+            {% endif %}
+            <span>{{ story.user.username }}</span>
+        </div>
+        <button class="story-close" onclick="window.history.back()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="story-progress">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <div class="story-content">
+        {% if story.image %}
+            <img src="{{ story.image.url }}" class="story-media" alt="Story Image">
+        {% elif story.video %}
+            <video controls autoplay class="story-media">
+                <source src="{{ story.video.url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% else %}
+            <div style="color: white; text-align: center;">
+                <p>No media available in this story</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="story-actions">
+        <button class="story-action-btn">
+            <i class="fas fa-heart"></i>
+        </button>
+        <button class="story-action-btn">
+            <i class="fas fa-share"></i>
+        </button>
+        <button class="story-action-btn">
+            <i class="fas fa-comment"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    // Auto-close story after 10 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressFill = document.getElementById('progress-fill');
+        let width = 0;
+        const interval = setInterval(function() {
+            if (width >= 100) {
+                clearInterval(interval);
+                window.history.back();
+            } else {
+                width += 1;
+                progressFill.style.width = width + '%';
+            }
+        }, 100); // 100ms * 100 = 10 seconds
+        
+        // Pause on hover
+        const storyContent = document.querySelector('.story-content');
+        storyContent.addEventListener('mouseenter', () => clearInterval(interval));
+        storyContent.addEventListener('mouseleave', () => {
+            interval = setInterval(function() {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    window.history.back();
+                } else {
+                    width += 1;
+                    progressFill.style.width = width + '%';
+                }
+            }, 100);
+        });
+    });
+</script>
+{% endblock %}
