@@ -31,5 +31,9 @@ urlpatterns = [
     # Story URLs
     path('story/create/', views.create_story, name='create_story'),
     path('stories/<int:pk>/', views.story_detail, name='story_detail'),
+    path('story/delete/<int:story_id>/', views.delete_story, name='delete_story'),
+    path('story/<int:story_id>/like/', views.like_story, name='like_story'),
+    path('story/<int:story_id>/comment/', views.comment_story, name='comment_story'),
+    path('story/<int:story_id>/share/', views.share_story, name='share_story'),
 
 ]

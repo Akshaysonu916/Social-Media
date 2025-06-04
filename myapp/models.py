@@ -32,3 +32,27 @@ class Story(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Story at {self.created_at}"
+    
+
+
+
+
+
+class StoryLike(models.Model):
+    story = models.ForeignKey(Story, related_name='likes', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('story', 'user')  # One like per user per story
+
+class StoryComment(models.Model):
+    story = models.ForeignKey(Story, related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class StoryShare(models.Model):
+    story = models.ForeignKey(Story, related_name='shares', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    shared_at = models.DateTimeField(auto_now_add=True)

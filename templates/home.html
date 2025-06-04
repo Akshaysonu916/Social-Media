@@ -120,6 +120,7 @@
         cursor: pointer;
         flex-shrink: 0;
         transition: transform 0.2s ease;
+        overflow: hidden;
     }
 
     .story:hover {
@@ -173,6 +174,7 @@
         top: 8px;
         left: 8px;
         object-fit: cover;
+        z-index: 5;
     }
 
     .username {
@@ -183,6 +185,28 @@
         font-size: 12px;
         font-weight: 600;
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+        z-index: 5;
+    }
+
+    .delete-story-btn {
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .delete-story-btn:hover {
+        background: rgba(255, 0, 0, 0.8);
     }
 
     /* Create Post */
@@ -325,15 +349,25 @@
 
                 <!-- User Stories -->
                 {% for story in stories %}
-                    <a href="{% url 'story_detail' story.id %}" class="story"
-                       style="background-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6)), url('{% if story.image %}{{ story.image.url }}{% else %}{% static 'default-story.jpg' %}{% endif %}')">
-                        {% if story.user.profile_picture %}
-                            <img src="{{ story.user.profile_picture.url }}" class="profile-avatar" />
-                        {% else %}
-                            <img src="{% static 'default-avatar.png' %}" class="profile-avatar" />
+                    <div class="story" style="background-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6)), url('{% if story.image %}{{ story.image.url }}{% else %}{% static 'default-story.jpg' %}{% endif %}')">
+                        <a href="{% url 'story_detail' story.id %}" style="display: block; height: 100%; width: 100%; position: relative; z-index: 1;">
+                            {% if story.user.profile_picture %}
+                                <img src="{{ story.user.profile_picture.url }}" class="profile-avatar" />
+                            {% else %}
+                                <img src="{% static 'default-avatar.png' %}" class="profile-avatar" />
+                            {% endif %}
+                            <div class="username">{{ story.user.username }}</div>
+                        </a>
+
+                        {% if story.user == request.user %}
+                        <form method="POST" action="{% url 'delete_story' story.id %}" style="margin: 0;">
+                            {% csrf_token %}
+                            <button type="submit" class="delete-story-btn" title="Delete Story" onclick="return confirm('Are you sure you want to delete this story?');">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
                         {% endif %}
-                        <div class="username">{{ story.user.username }}</div>
-                    </a>
+                    </div>
                 {% empty %}
                     <div style="padding: 16px; color: var(--text-secondary);">
                         No stories yet. Be the first to post!
@@ -378,8 +412,7 @@
         <div class="sidebar-card">
             <div class="card-title">Suggested Connections</div>
             <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
-                <i class="fas fa-user-friends" style="font-size: 24px; margin-bottom: 8px;"></i>
-                <p>Find people you know and grow your network.</p>
+                Coming Soon...
             </div>
         </div>
     </div>

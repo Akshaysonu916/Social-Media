@@ -6,7 +6,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
-from .models import Story
+from .models import *
+from django.http import HttpResponseForbidden
+from django.http import JsonResponse
 
 
 # Create your views here.
@@ -144,11 +146,82 @@ def create_story(request):
 
 
 def story_detail(request, pk):
-    story = get_object_or_404(Story, pk=pk)
-    return render(request, 'story_detail.html', {'story': story})
+    story = Story.objects.get(pk=pk)
+    user_liked_story = False
+    if request.user.is_authenticated:
+        user_liked_story = story.likes.filter(user=request.user).exists()
+
+    context = {
+        'story': story,
+        'user_liked_story': user_liked_story,
+    }
+    return render(request, 'story_detail.html', context)
 
 def story_list(request):
     from datetime import timedelta
     now = timezone.now()
     stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24))
     return render(request, 'home.html', {'stories': stories})
+
+def delete_story(request, story_id):
+    story = get_object_or_404(Story, id=story_id)
+
+    # Only allow deletion if the logged-in user owns the story
+    if story.user != request.user:
+        return HttpResponseForbidden("You are not allowed to delete this story.")
+
+    if request.method == "POST":
+        story.delete()
+        # Redirect to homepage or story list or user profile page after deletion
+        return redirect('home')  # Change 'home' to wherever you want
+
+    # For GET requests, you might want to confirm deletion or just redirect
+    return redirect('home')
+
+
+
+@login_required
+def like_story(request, story_id):
+    story = Story.objects.get(id=story_id)
+    user = request.user
+
+    liked = StoryLike.objects.filter(story=story, user=user).exists()
+    if liked:
+        # Unlike
+        StoryLike.objects.filter(story=story, user=user).delete()
+        liked = False
+    else:
+        # Like
+        StoryLike.objects.create(story=story, user=user)
+        liked = True
+
+    likes_count = story.likes.count()
+    return JsonResponse({'liked': liked, 'likes_count': likes_count})
+
+
+@login_required
+def comment_story(request, story_id):
+    if request.method == 'POST':
+        story = Story.objects.get(id=story_id)
+        user = request.user
+        comment_text = request.POST.get('comment', '').strip()
+        if comment_text:
+            comment = StoryComment.objects.create(story=story, user=user, text=comment_text)
+            return JsonResponse({
+                'success': True,
+                'comment': {
+                    'user': user.username,
+                    'text': comment.text,
+                    'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M')
+                }
+            })
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+
+@login_required
+def share_story(request, story_id):
+    story = Story.objects.get(id=story_id)
+    user = request.user
+    # For sharing logic, you might want to record the share and/or open a share dialog.
+    StoryShare.objects.create(story=story, user=user)
+    return JsonResponse({'success': True, 'message': 'Story shared!'})
