@@ -36,4 +36,9 @@ urlpatterns = [
     path('story/<int:story_id>/comment/', views.comment_story, name='comment_story'),
     path('story/<int:story_id>/share/', views.share_story, name='share_story'),
 
+
+    # Post URLs
+    path('like_post/<int:post_id>/', views.like_post, name='like_post'),
+    path('add_comment/<int:post_id>/', views.add_comment, name='add_comment'),
+
 ]

@@ -34,3 +34,15 @@ class StoryForm(forms.ModelForm):
         if not image and not video:
             raise forms.ValidationError("You must upload either an image or a video.")
         return cleaned
+    
+
+# post forms
+class PostForm(forms.ModelForm):
+    content = forms.CharField(widget=forms.Textarea(attrs={
+        'rows': 3,
+        'placeholder': "What's on your mind?"
+    }), max_length=500, required=True)
+
+    class Meta:
+        model = Post
+        fields = ['content', 'image']

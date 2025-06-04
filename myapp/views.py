@@ -1,14 +1,15 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate , get_user_model
 from django.shortcuts import get_object_or_404
-from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm
+from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm, PostForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta
 from .models import *
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Create your views here.
@@ -17,7 +18,23 @@ from django.http import JsonResponse
 def home_view(request):
     now = timezone.now()
     stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24)).order_by('-created_at')
-    return render(request, 'home.html', {'stories': stories})
+    posts = Post.objects.all().order_by('-created_at')
+    post_form = PostForm()
+
+    if request.method == 'POST':
+        post_form = PostForm(request.POST, request.FILES)
+        if post_form.is_valid():
+            new_post = post_form.save(commit=False)
+            new_post.user = request.user
+            new_post.save()
+            return redirect('home')
+
+    context = {
+        'stories': stories,
+        'posts': posts,
+        'post_form': post_form,
+    }
+    return render(request, 'home.html', context)
 
 def signup_view(request):
     if request.method == 'POST':
@@ -225,3 +242,44 @@ def share_story(request, story_id):
     # For sharing logic, you might want to record the share and/or open a share dialog.
     StoryShare.objects.create(story=story, user=user)
     return JsonResponse({'success': True, 'message': 'Story shared!'})
+
+
+# post views
+@login_required
+@csrf_exempt  # Ideally handle CSRF properly in AJAX
+def like_post(request, post_id):
+    if request.method == 'POST':
+        post = get_object_or_404(Post, id=post_id)
+        user = request.user
+
+        if user in post.likes.all():
+            post.likes.remove(user)
+            liked = False
+        else:
+            post.likes.add(user)
+            liked = True
+
+        return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+def add_comment(request, post_id):
+    if request.method == 'POST':
+        post = get_object_or_404(Post, id=post_id)
+        comment_text = request.POST.get('comment_text')
+
+        if comment_text:
+            Comment.objects.create(post=post, user=request.user, text=comment_text)
+        else:
+            # Optional: return error if comment text is empty
+            return JsonResponse({'error': 'Empty comment'}, status=400)
+
+        # If you want to return JSON (AJAX), you can do:
+        # return JsonResponse({'success': True})
+
+        # Otherwise, redirect back to referring page
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

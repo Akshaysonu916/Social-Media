@@ -3,418 +3,243 @@
 {% block title %}Home - SocialApp{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<style>
-    :root {
-        --primary-color: #1877f2;
-        --secondary-color: #42b72a;
-        --bg-color: #f0f2f5;
-        --card-color: #ffffff;
-        --text-primary: #050505;
-        --text-secondary: #65676b;
-        --divider-color: #ced0d4;
-    }
-
-    body {
-        background-color: var(--bg-color);
-        color: var(--text-primary);
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    .main-content {
-        display: flex;
-        padding-top: 20px;
-        max-width: 1200px;
-        margin: 0 auto;
-        gap: 16px;
-    }
-
-    .left-sidebar, .right-sidebar {
-        width: 25%;
-        position: sticky;
-        top: 20px;
-        height: calc(100vh - 20px);
-        overflow-y: auto;
-        padding: 8px;
-    }
-
-    .center-feed {
-        width: 50%;
-    }
-
-    .profile-card, .sidebar-card, .create-post, .empty-feed, .stories-container {
-        background-color: var(--card-color);
-        border-radius: 8px;
-        padding: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        margin-bottom: 16px;
-    }
-
-    .profile-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-    }
-
-    .user-avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        object-fit: cover;
-        background-color: #ddd;
-    }
-
-    .profile-name {
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-
-    .sidebar-menu {
-        list-style: none;
-        padding: 0;
-    }
-
-    .sidebar-menu li a {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px;
-        text-decoration: none;
-        color: var(--text-primary);
-        border-radius: 8px;
-        transition: background-color 0.3s ease;
-    }
-
-    .sidebar-menu li a:hover {
-        background-color: #e4e6eb;
-    }
-
-    .sidebar-menu i {
-        width: 24px;
-        text-align: center;
-        color: var(--primary-color);
-    }
-
-    /* Stories Section */
-    .stories {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding: 8px 0;
-        scrollbar-width: none;
-    }
-
-    .stories::-webkit-scrollbar {
-        display: none;
-    }
-
-    .story {
-        min-width: 120px;
-        height: 200px;
-        border-radius: 8px;
-        background-size: cover;
-        background-position: center;
-        position: relative;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: transform 0.2s ease;
-        overflow: hidden;
-    }
-
-    .story:hover {
-        transform: scale(1.02);
-    }
-
-    .story-add {
-        background-color: #f0f2f5;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        flex-direction: column;
-    }
-
-    .story-add-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 8px;
-        position: relative;
-        height: 100%;
-        justify-content: flex-end;
-    }
-
-    .story-add i {
-        font-size: 24px;
-        background: white;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary-color);
-        margin-bottom: 8px;
-    }
-
-    .story-add span {
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text-primary);
-    }
-
-    .profile-avatar {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: 3px solid var(--primary-color);
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        object-fit: cover;
-        z-index: 5;
-    }
-
-    .username {
-        position: absolute;
-        bottom: 8px;
-        left: 8px;
-        color: white;
-        font-size: 12px;
-        font-weight: 600;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-        z-index: 5;
-    }
-
-    .delete-story-btn {
-        background: rgba(0, 0, 0, 0.6);
-        border: none;
-        color: white;
-        border-radius: 50%;
-        width: 28px;
-        height: 28px;
-        cursor: pointer;
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .delete-story-btn:hover {
-        background: rgba(255, 0, 0, 0.8);
-    }
-
-    /* Create Post */
-    .post-input {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-
-    .post-input input {
-        flex: 1;
-        padding: 10px 16px;
-        border-radius: 20px;
-        background-color: #f0f2f5;
-        border: none;
-        font-size: 14px;
-    }
-
-    .post-options {
-        display: flex;
-        justify-content: space-between;
-        border-top: 1px solid var(--divider-color);
-        padding-top: 8px;
-    }
-
-    .post-option {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .post-option:hover {
-        background-color: #f0f2f5;
-    }
-
-    .post-option i {
-        color: var(--secondary-color);
-    }
-
-    /* Right Sidebar */
-    .card-title {
-        font-weight: 600;
-        font-size: 1.1rem;
-        margin-bottom: 12px;
-    }
-
-    .find-people {
-        display: flex;
-        gap: 8px;
-    }
-
-    .find-people input {
-        flex: 1;
-        padding: 10px 16px;
-        border: 1px solid var(--divider-color);
-        border-radius: 20px;
-        font-size: 14px;
-    }
-
-    .find-people button {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 10px 16px;
-        border: none;
-        border-radius: 20px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .find-people button:hover {
-        background-color: #166fe5;
-    }
-
-    @media (max-width: 1200px) {
-        .left-sidebar {
-            width: 30%;
-        }
-        .center-feed {
-            width: 70%;
-        }
-        .right-sidebar {
-            display: none;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .left-sidebar {
-            display: none;
-        }
-        .center-feed {
-            width: 100%;
-            padding: 0 8px;
-        }
-    }
-</style>
-
-<div class="main-content">
-    <!-- Left Sidebar -->
-    <div class="left-sidebar">
-        <div class="profile-card">
-            <div class="profile-info">
-                {% if user.is_authenticated and user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="user-avatar" />
-                {% else %}
-                    <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="user-avatar" />
-                {% endif %}
-                <div class="profile-name">{{ user.username }}</div>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="{% url 'friends' %}"><i class="fas fa-user-friends"></i>Friends</a></li>
-                <li><a href="{% url 'saved' %}"><i class="fas fa-bookmark"></i>Saved</a></li>
-                <li><a href="{% url 'groups' %}"><i class="fas fa-users"></i>Groups</a></li>
-                <li><a href="{% url 'watch' %}"><i class="fas fa-video"></i>Watch</a></li>
-                <li><a href="{% url 'memories' %}"><i class="fas fa-clock"></i>Memories</a></li>
+<div class="bg-gray-100 min-h-screen text-gray-900 font-sans">
+  <div class="container mx-auto max-w-6xl py-5 px-4">
+    <div class="flex flex-col lg:flex-row gap-4">
+      <!-- Left Sidebar -->
+      <aside class="w-full lg:w-1/4 lg:sticky lg:top-5 lg:h-[calc(100vh-40px)] lg:overflow-y-auto">
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+          <div class="flex items-center gap-3 mb-4">
+            {% if user.is_authenticated and user.profile_picture %}
+              <img src="{{ user.profile_picture.url }}" alt="{{ user.username }} profile picture" class="w-14 h-14 rounded-full object-cover bg-gray-200" />
+            {% else %}
+              <img src="{% static 'default-avatar.png' %}" alt="Default avatar" class="w-14 h-14 rounded-full object-cover bg-gray-200" />
+            {% endif %}
+            <div class="font-semibold text-lg">{{ user.username }}</div>
+          </div>
+          <nav>
+            <ul class="space-y-2">
+              <li><a href="{% url 'friends' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition"><i class="fas fa-user-friends text-blue-500 w-6 text-center"></i>Friends</a></li>
+              <li><a href="{% url 'saved' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition"><i class="fas fa-bookmark text-blue-500 w-6 text-center"></i>Saved</a></li>
+              <li><a href="{% url 'groups' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition"><i class="fas fa-users text-blue-500 w-6 text-center"></i>Groups</a></li>
+              <li><a href="{% url 'watch' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition"><i class="fas fa-video text-blue-500 w-6 text-center"></i>Watch</a></li>
+              <li><a href="{% url 'memories' %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition"><i class="fas fa-clock text-blue-500 w-6 text-center"></i>Memories</a></li>
             </ul>
+          </nav>
         </div>
-    </div>
+      </aside>
 
-    <!-- Center Feed -->
-    <div class="center-feed">
+      <!-- Center Feed -->
+      <main class="w-full lg:w-2/4">
         <!-- Stories -->
-        <div class="stories-container">
-            <div class="stories">
-                <!-- Add Story -->
-                <a href="{% url 'create_story' %}" class="story story-add">
-                    <div class="story-add-content">
-                        {% if user.is_authenticated and user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" class="profile-avatar" />
-                        {% else %}
-                            <img src="{% static 'default-avatar.png' %}" class="profile-avatar" />
-                        {% endif %}
-                        <i class="fas fa-plus"></i>
-                        <span>Create Story</span>
-                    </div>
+        <section class="mb-5">
+          <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <!-- Add Story -->
+            <a href="{% url 'create_story' %}" class="flex-none w-32 h-48 rounded-lg bg-gray-100 flex flex-col items-center justify-end relative overflow-hidden">
+              {% if user.is_authenticated and user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" class="absolute top-2 left-2 w-9 h-9 rounded-full border-2 border-blue-500 object-cover z-10" alt="Your avatar" />
+              {% else %}
+                <img src="{% static 'default-avatar.png' %}" class="absolute top-2 left-2 w-9 h-9 rounded-full border-2 border-blue-500 object-cover z-10" alt="Default avatar" />
+              {% endif %}
+              <div class="relative z-10 p-2 text-center">
+                <i class="fas fa-plus bg-white rounded-full w-10 h-10 flex items-center justify-center text-blue-500 mb-1 mx-auto"></i>
+                <span class="text-xs font-medium">Create Story</span>
+              </div>
+            </a>
+
+            <!-- User Stories -->
+            {% for story in stories %}
+              <div class="flex-none w-32 h-48 rounded-lg bg-cover bg-center relative overflow-hidden" style="background-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6)), url('{% if story.image %}{{ story.image.url }}{% else %}{% static 'default-story.jpg' %}{% endif %}')">
+                <a href="{% url 'story_detail' story.id %}" class="block h-full w-full relative z-10">
+                  {% if story.user.profile_picture %}
+                    <img src="{{ story.user.profile_picture.url }}" class="absolute top-2 left-2 w-9 h-9 rounded-full border-2 border-blue-500 object-cover z-10" alt="{{ story.user.username }} avatar" />
+                  {% else %}
+                    <img src="{% static 'default-avatar.png' %}" class="absolute top-2 left-2 w-9 h-9 rounded-full border-2 border-blue-500 object-cover z-10" alt="Default avatar" />
+                  {% endif %}
+                  <div class="absolute bottom-2 left-2 text-white text-xs font-semibold z-10 drop-shadow">{{ story.user.username }}</div>
                 </a>
 
-                <!-- User Stories -->
-                {% for story in stories %}
-                    <div class="story" style="background-image: linear-gradient(to bottom, transparent, rgba(0,0,0,0.6)), url('{% if story.image %}{{ story.image.url }}{% else %}{% static 'default-story.jpg' %}{% endif %}')">
-                        <a href="{% url 'story_detail' story.id %}" style="display: block; height: 100%; width: 100%; position: relative; z-index: 1;">
-                            {% if story.user.profile_picture %}
-                                <img src="{{ story.user.profile_picture.url }}" class="profile-avatar" />
-                            {% else %}
-                                <img src="{% static 'default-avatar.png' %}" class="profile-avatar" />
-                            {% endif %}
-                            <div class="username">{{ story.user.username }}</div>
-                        </a>
-
-                        {% if story.user == request.user %}
-                        <form method="POST" action="{% url 'delete_story' story.id %}" style="margin: 0;">
-                            {% csrf_token %}
-                            <button type="submit" class="delete-story-btn" title="Delete Story" onclick="return confirm('Are you sure you want to delete this story?');">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
-                {% empty %}
-                    <div style="padding: 16px; color: var(--text-secondary);">
-                        No stories yet. Be the first to post!
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
+                {% if story.user == request.user %}
+                <form method="POST" action="{% url 'delete_story' story.id %}" class="m-0">
+                  {% csrf_token %}
+                  <button type="submit" class="absolute top-2 right-2 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center z-20 hover:bg-red-600" onclick="return confirm('Are you sure you want to delete this story?');">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            {% empty %}
+              <div class="p-4 text-gray-500">
+                No stories yet. Be the first to post!
+              </div>
+            {% endfor %}
+          </div>
+        </section>
 
         <!-- Create Post -->
-        <div class="create-post">
-            <div class="post-input">
-                {% if user.is_authenticated and user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" class="user-avatar" />
-                {% else %}
-                    <img src="{% static 'default-avatar.png' %}" class="user-avatar" />
+        <section class="bg-white rounded-lg shadow p-4 mb-4">
+          <form method="POST" enctype="multipart/form-data" action="{% url 'home' %}">
+            {% csrf_token %}
+            <div class="flex items-center gap-3 mb-3">
+              {% if user.is_authenticated and user.profile_picture %}
+                <img src="{{ user.profile_picture.url }}" class="w-10 h-10 rounded-full object-cover bg-gray-200" alt="Your avatar" />
+              {% else %}
+                <img src="{% static 'default-avatar.png' %}" class="w-10 h-10 rounded-full object-cover bg-gray-200" alt="Default avatar" />
+              {% endif %}
+              {{ post_form.content }}
+            </div>
+            <div class="mb-3">
+              {{ post_form.image }}
+            </div>
+            <button type="submit" class="ml-auto bg-blue-500 text-white px-5 py-2 rounded-full font-semibold hover:bg-blue-600 transition">Post</button>
+          </form>
+        </section>
+
+        <!-- Posts Feed -->
+        <section>
+          {% if posts %}
+            {% for post in posts %}
+              <article class="bg-white rounded-lg shadow p-4 mb-4" data-post-id="{{ post.id }}">
+                <header class="flex items-center gap-3 mb-3">
+                  {% if post.user.profile_picture %}
+                    <img src="{{ post.user.profile_picture.url }}" class="w-10 h-10 rounded-full object-cover bg-gray-200" alt="{{ post.user.username }} avatar" />
+                  {% else %}
+                    <img src="{% static 'default-avatar.png' %}" class="w-10 h-10 rounded-full object-cover bg-gray-200" alt="Default avatar" />
+                  {% endif %}
+                  <div>
+                    <div class="font-semibold">{{ post.user.username }}</div>
+                    <time class="text-gray-500 text-xs" datetime="{{ post.created_at|date:'c' }}">{{ post.created_at|timesince }} ago</time>
+                  </div>
+                </header>
+                <div class="text-sm whitespace-pre-line mb-3">{{ post.text|linebreaksbr }}</div>
+                {% if post.image %}
+                  <img src="{{ post.image.url }}" alt="Post image" class="w-full rounded-lg mt-2" />
                 {% endif %}
-                <input type="text" placeholder="What's on your mind?" />
-            </div>
-            <div class="post-options">
-                <div class="post-option"><i class="fas fa-video"></i>Live Video</div>
-                <div class="post-option"><i class="fas fa-images"></i>Photo/Video</div>
-                <div class="post-option"><i class="fas fa-smile"></i>Feeling/Activity</div>
-            </div>
+
+                <!-- Like and Comment Buttons -->
+                <div class="flex gap-4 border-t border-gray-200 pt-3 mt-3">
+                  <!-- Updated Like Form for AJAX -->
+                  <form method="POST" action="{% url 'like_post' post.id %}" class="like-form inline" data-post-id="{{ post.id }}">
+                    {% csrf_token %}
+                    <button type="submit" class="flex items-center gap-1 text-blue-500 font-semibold px-3 py-1 rounded-full hover:bg-blue-50" aria-pressed="{% if user in post.likes.all %}true{% else %}false{% endif %}">
+                      <i class="fas fa-thumbs-up"></i> Like
+                      <span class="like-count text-gray-500 text-sm">{{ post.likes.count }}</span>
+                    </button>
+                  </form>
+                  <button type="button" class="comment-btn flex items-center gap-1 text-blue-500 font-semibold px-3 py-1 rounded-full hover:bg-blue-50" aria-expanded="false" aria-controls="comments-{{ post.id }}">
+                    <i class="fas fa-comment"></i> Comment
+                    <span class="text-gray-500 text-sm">{{ post.comments.count }}</span>
+                  </button>
+                </div>
+
+                <!-- Comments Section (hidden by default) -->
+                <div class="comments-section mt-3 hidden" id="comments-{{ post.id }}">
+                  {% for comment in post.comments.all %}
+                    <div class="py-1.5 border-b border-gray-100">
+                      <strong>{{ comment.user.username }}</strong>: {{ comment.text|linebreaksbr }}
+                    </div>
+                  {% empty %}
+                    <div class="text-gray-500 italic">No comments yet.</div>
+                  {% endfor %}
+                  {% if user.is_authenticated %}
+                  <form method="POST" action="{% url 'add_comment' post.id %}" class="mt-2">
+                    {% csrf_token %}
+                    <textarea name="comment_text" rows="2" required placeholder="Write a comment..." class="w-full p-1.5 rounded border border-gray-200"></textarea>
+                    <button type="submit" class="mt-1 px-3 py-1.5 rounded-full bg-blue-500 text-white border-none cursor-pointer">Post</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          {% else %}
+            <p>No posts to show yet.</p>
+          {% endif %}
+        </section>
+      </main>
+
+      <!-- Right Sidebar -->
+      <aside class="w-full lg:w-1/4 lg:sticky lg:top-5 lg:h-[calc(100vh-40px)] lg:overflow-y-auto">
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+          <h2 class="text-lg font-semibold mb-3">Find People</h2>
+          <form class="flex gap-2">
+            <input type="text" name="q" placeholder="Search users..." class="flex-1 p-2 rounded border border-gray-200" required>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded font-semibold hover:bg-blue-600 transition">Search</button>
+          </form>
         </div>
 
-        <!-- Empty Feed -->
-        <div class="empty-feed">
-            <h3>Welcome to SocialApp!</h3>
-            <p>Connect with friends or follow pages to see posts here.</p>
+        <div class="bg-white rounded-lg shadow p-4">
+          <h2 class="text-lg font-semibold mb-3">Suggestions</h2>
+          <p class="text-gray-500">Suggestions to follow will appear here.</p>
         </div>
+      </aside>
     </div>
-
-    <!-- Right Sidebar -->
-    <div class="right-sidebar">
-        <div class="sidebar-card">
-            <div class="card-title">Find People</div>
-            <div class="find-people">
-                <input type="text" placeholder="Search by name or email" />
-                <button>Search</button>
-            </div>
-        </div>
-        <div class="sidebar-card">
-            <div class="card-title">Suggested Connections</div>
-            <div style="text-align: center; padding: 20px; color: var(--text-secondary);">
-                Coming Soon...
-            </div>
-        </div>
-    </div>
+  </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle comments visibility
+    document.querySelectorAll('.comment-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const postId = this.closest('[data-post-id]').dataset.postId;
+        const commentsSection = document.getElementById(`comments-${postId}`);
+        if (!commentsSection) return;
+
+        if (commentsSection.classList.contains('hidden')) {
+          commentsSection.classList.remove('hidden');
+          this.setAttribute('aria-expanded', 'true');
+        } else {
+          commentsSection.classList.add('hidden');
+          this.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+
+    // AJAX Like button handler
+    document.querySelectorAll('.like-form').forEach(form => {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault(); // prevent full page reload
+
+        const url = form.action;
+        const csrftoken = form.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrftoken,
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        })
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+
+          // Update like count display
+          const likeCountSpan = form.querySelector('.like-count');
+          likeCountSpan.textContent = data.total_likes;
+
+          // Update aria-pressed and button styling
+          const button = form.querySelector('button');
+          button.setAttribute('aria-pressed', data.liked ? 'true' : 'false');
+
+          if (data.liked) {
+            button.classList.add('text-blue-700');
+          } else {
+            button.classList.remove('text-blue-700');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+      });
+    });
+  });
+</script>
 {% endblock %}
