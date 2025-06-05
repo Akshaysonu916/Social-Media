@@ -3,179 +3,114 @@
 {% block title %}Profile - SocialApp{% endblock %}
 
 {% block content %}
-<div class="profile-container">
-    <div class="profile-header">
-        <div class="profile-avatar">
+<div class="max-w-2xl mx-auto my-8 bg-white p-8 rounded-lg shadow-md font-sans">
+    <!-- Profile Header -->
+    <div class="flex items-center gap-5 mb-8" id="profile-header">
+        <div class="w-32 h-32 rounded-full border-2 border-gray-300 overflow-hidden">
             {% if user.profile_picture %}
-                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="avatar-img">
+                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="w-full h-full object-cover">
             {% else %}
-                <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="avatar-img">
+                <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="w-full h-full object-cover">
             {% endif %}
         </div>
         <div>
-            <h2 id="display-name">{{ user.get_full_name|default:user.username }}</h2>
-            <p id="display-bio">{{ user.bio }}</p>
+            <h2 id="display-name" class="text-2xl font-semibold">{{ user.get_full_name|default:user.username }}</h2>
+            <p id="display-bio" class="text-gray-600">{{ user.bio }}</p>
             
-            <div class="profile-actions">
-                <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
-                <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
-                <a href="{% url 'logout' %}" class="btn btn-secondary bg-red-500">Logout</a>
+            <div class="mt-4 flex gap-2">
+                <button id="edit-profile-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Edit Profile</button>
+                <a href="{% url 'home' %}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Back to Home</a>
+                <a href="{% url 'logout' %}" class="px-4 py-2 bg-red-500 text-white rounded-md font-medium">Logout</a>
             </div>
         </div>
     </div>
 
-    <div class="profile-details">
-        <div class="detail-row">
-            <div class="detail-label">Email</div>
-            <div class="detail-value">{{ user.email }}</div>
+    <!-- Profile Details -->
+    <div id="profile-details" class="space-y-4">
+        <div class="flex justify-between py-2 border-b border-gray-200">
+            <div class="font-medium text-gray-500">Email</div>
+            <div class="text-gray-800">{{ user.email }}</div>
         </div>
-        <div class="detail-row">
-            <div class="detail-label">Location</div>
-            <div class="detail-value">{{ user.location }}</div>
+        <div class="flex justify-between py-2 border-b border-gray-200">
+            <div class="font-medium text-gray-500">Location</div>
+            <div class="text-gray-800">{{ user.location }}</div>
         </div>
-        <div class="detail-row">
-            <div class="detail-label">Joined</div>
-            <div class="detail-value">{{ user.date_joined|date:"F j, Y" }}</div>
+        <div class="flex justify-between py-2 border-b border-gray-200">
+            <div class="font-medium text-gray-500">Joined</div>
+            <div class="text-gray-800">{{ user.date_joined|date:"F j, Y" }}</div>
         </div>
-        <div class="detail-row">
-            <div class="detail-label">Bio</div>
-            <div class="detail-value" id="display-bio-full">{{ user.bio }}</div>
+        <div class="flex justify-between py-2 border-b border-gray-200">
+            <div class="font-medium text-gray-500">Bio</div>
+            <div class="text-gray-800" id="display-bio-full">{{ user.bio }}</div>
         </div>
     </div>
 
-    <div class="edit-form" style="display: none;">
-        <h3>Edit Profile</h3>
+    <!-- Edit Form (hidden by default) -->
+    <div id="edit-form" class="hidden mt-5">
+        <h3 class="text-xl font-semibold mb-4">Edit Profile</h3>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
 
-            <div class="detail-row">
-                <div class="detail-label">Profile Picture</div>
-                <div class="detail-value">
-                    <input type="file" name="profile_picture" accept="image/*">
+            <div class="flex justify-between py-2">
+                <div class="font-medium text-gray-500">Profile Picture</div>
+                <div class="text-gray-800">
+                    <input type="file" name="profile_picture" accept="image/*" class="border rounded p-1">
                 </div>
             </div>
 
-            <div class="detail-row">
-                <div class="detail-label">Name</div>
-                <div class="detail-value">
-                    <input type="text" name="name" value="{{ user.get_full_name|default:user.username }}">
+            <div class="flex justify-between py-2">
+                <div class="font-medium text-gray-500">Name</div>
+                <div class="text-gray-800">
+                    <input type="text" name="name" value="{{ user.get_full_name|default:user.username }}" class="border rounded p-1 w-64">
                 </div>
             </div>
 
-            <div class="detail-row">
-                <div class="detail-label">Email</div>
-                <div class="detail-value">
-                    <input type="email" name="email" value="{{ user.email }}">
+            <div class="flex justify-between py-2">
+                <div class="font-medium text-gray-500">Email</div>
+                <div class="text-gray-800">
+                    <input type="email" name="email" value="{{ user.email }}" class="border rounded p-1 w-64">
                 </div>
             </div>
 
-            <div class="detail-row">
-                <div class="detail-label">Location</div>
-                <div class="detail-value">
-                    <input type="text" name="location" value="{{ user.location }}">
+            <div class="flex justify-between py-2">
+                <div class="font-medium text-gray-500">Location</div>
+                <div class="text-gray-800">
+                    <input type="text" name="location" value="{{ user.location }}" class="border rounded p-1 w-64">
                 </div>
             </div>
 
-            <div class="detail-row">
-                <div class="detail-label">Bio</div>
-                <div class="detail-value">
-                    <textarea name="bio">{{ user.bio }}</textarea>
+            <div class="flex justify-between py-2">
+                <div class="font-medium text-gray-500">Bio</div>
+                <div class="text-gray-800">
+                    <textarea name="bio" class="border rounded p-1 w-64 h-24">{{ user.bio }}</textarea>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
+            <div class="mt-4 flex gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Save Changes</button>
+                <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
 
-<style>
-    .profile-container {
-        max-width: 700px;
-        margin: 30px auto;
-        background: #fff;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
-        font-family: Arial, sans-serif;
-    }
-
-    .profile-header {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-        margin-bottom: 30px;
-    }
-
-    .avatar-img {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid #ccc;
-    }
-
-    .profile-actions {
-        margin-top: 15px;
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #eee;
-    }
-
-    .detail-label {
-        font-weight: 600;
-        color: #555;
-    }
-
-    .detail-value {
-        color: #333;
-    }
-
-    .edit-form {
-        margin-top: 20px;
-    }
-
-    .btn {
-        padding: 8px 14px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    .btn-primary {
-        background-color: #1877f2;
-        color: white;
-        margin-right: 10px;
-    }
-
-    .btn-secondary {
-        background-color: #e4e6eb;
-        color: #050505;
-    }
-</style>
-
 <script>
     const editBtn = document.getElementById('edit-profile-btn');
     const cancelBtn = document.getElementById('cancel-edit-btn');
-    const editForm = document.querySelector('.edit-form');
-    const profileDetails = document.querySelector('.profile-details');
-    const profileHeader = document.querySelector('.profile-header');
+    const editForm = document.getElementById('edit-form');
+    const profileDetails = document.getElementById('profile-details');
+    const profileHeader = document.getElementById('profile-header');
 
     editBtn.addEventListener('click', () => {
-        editForm.style.display = 'block';
-        profileDetails.style.display = 'none';
-        profileHeader.style.display = 'none';
+        editForm.classList.remove('hidden');
+        profileDetails.classList.add('hidden');
+        profileHeader.classList.add('hidden');
     });
 
     cancelBtn.addEventListener('click', () => {
-        editForm.style.display = 'none';
-        profileDetails.style.display = 'block';
-        profileHeader.style.display = 'block';
+        editForm.classList.add('hidden');
+        profileDetails.classList.remove('hidden');
+        profileHeader.classList.remove('hidden');
     });
 </script>
 {% endblock %}

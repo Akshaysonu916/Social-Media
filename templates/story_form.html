@@ -1,10 +1,16 @@
 {% extends 'navbar.html' %}
 {% load static %}
 {% block content %}
-<h2>Create Story</h2>
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Upload</button>
-</form>
+<div class="max-w-md mx-auto p-4">
+    <h2 class="text-2xl font-bold mb-4">Create Story</h2>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+        {% csrf_token %}
+        <div class="space-y-2">
+            {{ form.as_p }}
+        </div>
+        <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Upload
+        </button>
+    </form>
+</div>
 {% endblock %}

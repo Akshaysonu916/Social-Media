@@ -7,91 +7,56 @@
     <title>{% block title %}SocialApp{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body class="bg-gray-100 font-sans m-0 text-base">
+    <!-- Navbar -->
+    <header class="bg-white py-3 px-6 flex items-center justify-between shadow-sm sticky top-0 z-50">
+        <a href="{% url 'home' %}" class="text-2xl font-bold text-blue-600 no-underline hover:text-blue-700">SocialApp</a>
 
+        <form action="{% url 'search' %}" method="get" class="flex items-center bg-gray-100 rounded-full px-4 py-2 w-72" role="search" aria-label="Site search">
+            <i class="fas fa-search text-gray-500 text-lg mr-2" aria-hidden="true"></i>
+            <input type="text" name="q" placeholder="Search for people or content" aria-label="Search input" class="border-none bg-transparent outline-none w-full text-base" />
+        </form>
+
+        <nav class="flex items-center gap-6" aria-label="Primary navigation">
+            <a href="{% url 'home' %}" class="relative no-underline text-current flex items-center text-lg p-2 hover:bg-gray-100 rounded-lg" title="Home" aria-label="Home">
+                <i class="fas fa-home text-gray-600 text-xl" aria-hidden="true"></i>
+                <span class="sr-only">Home</span>
+            </a>
+            <a href="{% url 'users_list' %}" class="relative no-underline text-current flex items-center text-lg p-2 hover:bg-gray-100 rounded-lg" title="Users" aria-label="Users">
+                <i class="fas fa-users text-gray-600 text-xl" aria-hidden="true"></i>
+                <span class="sr-only">Users</span>
+            </a>
+            <a href="{% url 'notifications' %}" class="relative no-underline text-current flex items-center text-lg p-2 hover:bg-gray-100 rounded-lg" title="Notifications" aria-label="Notifications">
+                <i class="fas fa-bell text-gray-600 text-xl" aria-hidden="true"></i>
+                <span class="sr-only">Notifications</span>
+            </a>
+            <a href="{% url 'messages' %}" class="relative no-underline text-current flex items-center text-lg p-2 hover:bg-gray-100 rounded-lg" title="Messages" aria-label="Messages">
+                <i class="fas fa-comment-dots text-gray-600 text-xl" aria-hidden="true"></i>
+                <span class="sr-only">Messages</span>
+            </a>
+
+            <!-- User Avatar -->
+            <a href="{% url 'profile' %}" class="relative no-underline text-current flex items-center" title="Profile" aria-label="Profile">
+                {% if user.is_authenticated and user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-gray-200 hover:border-blue-500" />
+                {% else %}
+                    <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="w-10 h-10 rounded-full object-cover cursor-pointer border-2 border-gray-200 hover:border-blue-500" />
+                {% endif %}
+            </a>
+        </nav>
+    </header>
+
+    <!-- Page Content -->
+    <div class="flex justify-center mt-8 px-4">
+        <div class="w-full max-w-6xl">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- Screen reader only utility -->
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f0f2f5;
-        }
-
-        header {
-            background-color: #ffffff;
-            padding: 6px 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1877f2;
-            text-decoration: none;
-        }
-
-        .search-bar {
-            display: flex;
-            align-items: center;
-            background-color: #f0f2f5;
-            border-radius: 20px;
-            padding: 3px 8px;
-            width: 220px;
-        }
-
-        .search-bar input {
-            border: none;
-            background: none;
-            outline: none;
-            margin-left: 8px;
-            width: 100%;
-            font-size: 14px;
-        }
-
-        .nav-icons {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .nav-icon {
-            position: relative;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-        }
-
-        .nav-icon i {
-            font-size: 16px;
-            color: #606770;
-        }
-
-        .nav-icon .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: #f02849;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 12px;
-        }
-
-        .user-avatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            object-fit: cover;
-            cursor: pointer;
-        }
-
         .sr-only {
             position: absolute;
             width: 1px; 
@@ -102,64 +67,6 @@
             clip: rect(0,0,0,0); 
             border: 0;
         }
-
-        .main-content {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        /* Responsive: hide search bar on small screens */
-        @media (max-width: 600px) {
-            .search-bar {
-                display: none;
-            }
-        }
     </style>
-</head>
-<body>
-
-    <!-- Navbar -->
-    <header>
-        <a href="{% url 'home' %}" class="logo">SocialApp</a>
-
-        <form action="{% url 'search' %}" method="get" class="search-bar" role="search" aria-label="Site search">
-            <i class="fas fa-search" aria-hidden="true"></i>
-            <input type="text" name="q" placeholder="Search for people or content" aria-label="Search input" />
-        </form>
-
-        <nav class="nav-icons" aria-label="Primary navigation">
-            <a href="{% url 'home' %}" class="nav-icon" title="Home" aria-label="Home">
-                <i class="fas fa-home" aria-hidden="true"></i>
-                <span class="sr-only">Home</span>
-            </a>
-            <a href="{% url 'users_list' %}" class="nav-icon" title="Users" aria-label="Users">
-                <i class="fas fa-users" aria-hidden="true"></i>
-                <span class="sr-only">Users</span>
-            </a>
-            <a href="{% url 'notifications' %}" class="nav-icon" title="Notifications" aria-label="Notifications">
-                <i class="fas fa-bell" aria-hidden="true"></i>
-                <span class="sr-only">Notifications</span>
-            </a>
-            <a href="{% url 'messages' %}" class="nav-icon" title="Messages" aria-label="Messages">
-                <i class="fas fa-comment-dots" aria-hidden="true"></i>
-                <span class="sr-only">Messages</span>
-            </a>
-
-            <!-- User Avatar -->
-            <a href="{% url 'profile' %}" class="nav-icon" title="Profile" aria-label="Profile">
-                {% if user.is_authenticated and user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="user-avatar" />
-                {% else %}
-                    <img src="{% static 'default-avatar.png' %}" alt="Default Avatar" class="user-avatar" />
-                {% endif %}
-            </a>
-        </nav>
-    </header>
-
-    <!-- Page Content -->
-    {% block content %}
-    {% endblock %}
-
 </body>
 </html>
