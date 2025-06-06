@@ -1,126 +1,229 @@
 {% extends "navbar.html" %}
+{% load custom_filters %}
 {% block title %}Messages - SocialApp{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-100">
     <div class="flex h-[calc(100vh-70px)] bg-white rounded-lg shadow-sm">
-        <!-- Left sidebar - Conversation list -->
-        <div class="w-[350px] border-r border-gray-200 overflow-y-auto">
+        <!-- Left sidebar - User list -->
+        <aside class="w-[350px] border-r border-gray-200 overflow-y-auto" aria-label="User list">
             <div class="flex justify-between items-center p-4 border-b border-gray-200">
                 <h2 class="text-xl font-semibold">Messages</h2>
-                <button class="bg-blue-500 text-white px-3 py-1 rounded-md text-sm">
-                    <i class="fas fa-edit mr-1"></i> New Message
-                </button>
             </div>
-            
+
             <div class="relative p-3">
-                <i class="fas fa-search absolute left-6 top-6 text-gray-500"></i>
-                <input type="text" placeholder="Search messages" class="w-full pl-8 pr-3 py-2 rounded-full border border-gray-300 bg-gray-100">
+                <i class="fas fa-search absolute left-6 top-6 text-gray-500 pointer-events-none"></i>
+                <input
+                    type="search"
+                    placeholder="Search users..."
+                    class="w-full pl-8 pr-3 py-2 rounded-full border border-gray-300 bg-gray-100"
+                    aria-label="Search users"
+                    spellcheck="false"
+                >
             </div>
-            
-            <div class="py-1">
-                {% for conversation in conversations %}
-                <div class="flex p-3 cursor-pointer relative hover:bg-gray-100 {% if conversation.unread %}bg-blue-50{% endif %}">
-                    <div class="w-12 h-12 rounded-full overflow-hidden mr-3">
-                        <img src="{{ conversation.participant.profile_pic.url }}" alt="{{ conversation.participant.username }}" class="w-full h-full object-cover">
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between">
-                            <span class="font-semibold">{{ conversation.participant.username }}</span>
-                            <span class="text-xs text-gray-500">{{ conversation.last_message.timestamp|timesince }} ago</span>
-                        </div>
-                        <p class="text-sm text-gray-500 truncate mt-1">{{ conversation.last_message.content|truncatechars:30 }}</p>
-                        {% if conversation.unread %}
-                        <span class="absolute right-3 bottom-3 w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
-                        {% endif %}
-                    </div>
-                </div>
+
+            <nav class="py-1" aria-label="Conversation users">
+                {% for user in all_users %}
+                    {% with conversation=conversation_dict|get_item:user.id %}
+                        <a
+                            href="{% if conversation %}{% url 'chat_detail' conversation.id %}{% else %}{% url 'start_conversation' user.id %}{% endif %}"
+                            class="block focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <div
+                                class="flex p-3 cursor-pointer relative hover:bg-gray-100"
+                                role="listitem"
+                            >
+                                <div class="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
+                                    <img
+                                        src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                        alt="{{ user.username }}'s profile picture"
+                                        class="w-full h-full object-cover"
+                                        loading="lazy"
+                                    >
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-semibold truncate">{{ user.username }}</span>
+                                        {% if conversation and conversation.last_message %}
+                                            <time
+                                                class="text-xs text-gray-500 ml-2 whitespace-nowrap"
+                                                datetime="{{ conversation.last_message.timestamp|date:'c' }}"
+                                                title="{{ conversation.last_message.timestamp|date:'DATETIME_FORMAT' }}"
+                                            >
+                                                {{ conversation.last_message.timestamp|timesince }} ago
+                                            </time>
+                                        {% endif %}
+                                    </div>
+                                    {% if conversation and conversation.last_message %}
+                                        <p class="text-sm text-gray-500 truncate mt-1" title="{{ conversation.last_message.content }}">
+                                            {{ conversation.last_message.content|truncatechars:30 }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    {% endwith %}
                 {% empty %}
-                <div class="flex flex-col items-center justify-center h-48 text-gray-500">
-                    <i class="fas fa-comments text-5xl mb-4 opacity-50"></i>
-                    <p>No conversations yet</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        
-        <!-- Right side - Message area -->
-        <div class="flex-1 flex flex-col">
-            {% if active_conversation %}
-            <div class="p-4 border-b border-gray-200 flex items-center">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
-                        <img src="{{ active_conversation.participant.profile_pic.url }}" alt="{{ active_conversation.participant.username }}" class="w-full h-full object-cover">
+                    <div class="flex flex-col items-center justify-center h-48 text-gray-500">
+                        <i class="fas fa-user text-5xl mb-4 opacity-50" aria-hidden="true"></i>
+                        <p>No other users found</p>
                     </div>
-                    <span>{{ active_conversation.participant.username }}</span>
-                </div>
-            </div>
-            
-            <div class="flex-1 p-5 overflow-y-auto bg-gray-50">
-                {% for message in active_conversation.messages %}
-                <div class="max-w-[60%] p-3 rounded-2xl mb-4 {% if message.sender == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-200 text-gray-900 mr-auto{% endif %}">
-                    <p>{{ message.content }}</p>
-                    <span class="text-xs block text-right mt-1 opacity-80">{{ message.timestamp|time }}</span>
-                </div>
                 {% endfor %}
-            </div>
-            
-            <div class="flex p-4 border-t border-gray-200">
-                <input type="text" placeholder="Type a message..." class="flex-1 px-4 py-2 rounded-full border border-gray-300 mr-3">
-                <button class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
+            </nav>
+        </aside>
+
+        <!-- Right side - Message area -->
+        <section class="flex-1 flex flex-col" aria-live="polite" aria-relevant="additions">
+            {% if active_conversation %}
+                {% with participant=active_conversation.other_participant %}
+                    <header class="p-4 border-b border-gray-200 flex items-center">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0">
+                                <img
+                                    src="{{ participant.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                    alt="{{ participant.username }}'s profile picture"
+                                    class="w-full h-full object-cover"
+                                    loading="lazy"
+                                >
+                            </div>
+                            <h3 class="font-semibold text-lg">{{ participant.username }}</h3>
+                        </div>
+                    </header>
+                {% endwith %}
+
+                <!-- Messages list -->
+                <main
+                    id="messages-container"
+                    class="flex-1 p-5 overflow-y-auto bg-gray-50 messages-container"
+                    tabindex="0"
+                >
+                    {% for message in active_conversation.messages.all %}
+                        <article
+                            class="max-w-[60%] p-3 rounded-2xl mb-4 break-words {% if message.sender == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-200 text-gray-900 mr-auto{% endif %}"
+                            role="article"
+                            aria-label="Message from {{ message.sender.username }}"
+                        >
+                            <p>{{ message.content }}</p>
+                            <time class="text-xs block text-right mt-1 opacity-80" datetime="{{ message.timestamp|date:'c' }}">
+                                {{ message.timestamp|time }}
+                            </time>
+                        </article>
+                    {% empty %}
+                        <p class="text-center text-gray-500 mt-10">No messages yet. Say hi!</p>
+                    {% endfor %}
+                </main>
+
+                <!-- Message input -->
+                <form
+                    id="chat-form"
+                    class="flex p-4 border-t border-gray-200"
+                    autocomplete="off"
+                    aria-label="Send a message"
+                >
+                    {% csrf_token %}
+                    <input
+                        id="chat-message-input"
+                        type="text"
+                        placeholder="Type a message..."
+                        autocomplete="off"
+                        class="flex-1 px-4 py-2 rounded-full border border-gray-300 mr-3"
+                        required
+                        aria-required="true"
+                        aria-describedby="messageHelp"
+                    >
+                    <button
+                        id="chat-message-submit"
+                        type="submit"
+                        class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center"
+                        aria-label="Send message"
+                    >
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                    </button>
+                </form>
+
+                <!-- WebSocket Script -->
+                <script>
+                    (() => {
+                        const conversationId = Number("{{ active_conversation.id }}");
+                        const userId = Number("{{ request.user.id }}");
+
+                        const chatSocket = new WebSocket(
+                            (window.location.protocol === "https:" ? "wss://" : "ws://") +
+                            window.location.host +
+                            '/ws/chat/' + conversationId + '/'
+                        );
+
+                        const messagesContainer = document.querySelector('.messages-container');
+                        const inputField = document.getElementById('chat-message-input');
+                        const form = document.getElementById('chat-form');
+
+                        function scrollToBottom() {
+                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                        }
+
+                        scrollToBottom();
+
+                        chatSocket.onmessage = function(e) {
+                            const data = JSON.parse(e.data);
+                            const message = data['message'];
+                            const senderId = Number(data['sender_id']);
+
+                            const messageDiv = document.createElement('article');
+                            messageDiv.classList.add('max-w-[60%]', 'p-3', 'rounded-2xl', 'mb-4', 'break-words');
+                            messageDiv.setAttribute('role', 'article');
+                            messageDiv.setAttribute('aria-label', senderId === userId ? 'Your message' : 'Message from participant');
+
+                            if (senderId === userId) {
+                                messageDiv.classList.add('bg-blue-500', 'text-white', 'ml-auto');
+                            } else {
+                                messageDiv.classList.add('bg-gray-200', 'text-gray-900', 'mr-auto');
+                            }
+
+                            const p = document.createElement('p');
+                            p.textContent = message;
+                            messageDiv.appendChild(p);
+
+                            const span = document.createElement('time');
+                            span.classList.add('text-xs', 'block', 'text-right', 'mt-1', 'opacity-80');
+                            span.textContent = new Date().toLocaleTimeString();
+                            messageDiv.appendChild(span);
+
+                            messagesContainer.appendChild(messageDiv);
+                            scrollToBottom();
+                        };
+
+                        chatSocket.onclose = function(e) {
+                            console.error('Chat socket closed unexpectedly');
+                        };
+
+                        function sendMessage() {
+                            const message = inputField.value.trim();
+                            if (message === '') return;
+                            chatSocket.send(JSON.stringify({'message': message}));
+                            inputField.value = '';
+                        }
+
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            sendMessage();
+                        });
+
+                        inputField.addEventListener('keyup', function(e) {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                sendMessage();
+                            }
+                        });
+                    })();
+                </script>
             {% else %}
-            <div class="flex flex-col items-center justify-center h-full text-gray-500">
-                <i class="fas fa-comment-dots text-5xl mb-4 opacity-50"></i>
-                <h3 class="text-xl font-semibold mb-1">Select a conversation</h3>
-                <p>Or start a new one</p>
-            </div>
+                <div class="flex flex-col items-center justify-center h-full text-gray-500">
+                    <i class="fas fa-comment-dots text-5xl mb-4 opacity-50" aria-hidden="true"></i>
+                    <h3 class="text-xl font-semibold mb-1">Select a user</h3>
+                    <p>Start a conversation by clicking on a user</p>
+                </div>
             {% endif %}
-        </div>
+        </section>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // In a real app, you would have JavaScript to:
-    // - Load conversations via AJAX
-    // - Handle sending messages
-    // - Mark messages as read
-    // - Implement real-time updates
-    
-    // Example: Toggle conversation on mobile
-    const conversations = document.querySelectorAll('.conversation');
-    conversations.forEach(conv => {
-        conv.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
-                document.querySelector('.message-area').classList.add('active');
-            }
-        });
-    });
-    
-    // Back button for mobile
-    const backBtn = document.createElement('button');
-    backBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
-    backBtn.className = 'back-btn';
-    backBtn.style.display = 'none';
-    document.querySelector('.message-header').prepend(backBtn);
-    
-    backBtn.addEventListener('click', function() {
-        document.querySelector('.message-area').classList.remove('active');
-    });
-    
-    function checkScreenSize() {
-        if (window.innerWidth <= 768) {
-            backBtn.style.display = 'block';
-        } else {
-            backBtn.style.display = 'none';
-        }
-    }
-    
-    window.addEventListener('resize', checkScreenSize);
-    checkScreenSize();
-});
-</script>
 {% endblock %}

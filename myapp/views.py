@@ -105,9 +105,6 @@ def users_list(request):
 def notifications(request):
     return render(request, 'notifications.html')
 
-def messages_view(request):
-    return render(request, 'messages.html')
-
 
 
 def search_view(request):
@@ -283,3 +280,80 @@ def add_comment(request, post_id):
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+# message views
+
+User = get_user_model()
+
+@login_required
+def messages_view(request):
+    current_user = request.user
+
+    # All users except the logged-in one
+    all_users = User.objects.exclude(id=current_user.id)
+
+    # All conversations of the current user
+    conversations = Conversation.objects.filter(participants=current_user).prefetch_related('participants', 'messages').order_by('-updated_at')
+
+    # Build a dict of user_id -> conversation
+    conversation_dict = {}
+    for convo in conversations:
+        other_user = convo.get_other_participant(current_user)
+        if other_user:
+            convo.other_participant = other_user
+            conversation_dict[other_user.id] = convo
+
+    # Get the first conversation to show on the right side
+    active_conversation = conversations.first()
+    if active_conversation:
+        active_conversation.other_participant = active_conversation.get_other_participant(current_user)
+
+    context = {
+        'all_users': all_users,
+        'conversation_dict': conversation_dict,
+        'active_conversation': active_conversation,
+    }
+    return render(request, 'messages.html', context)
+
+@login_required
+def chat_detail(request, conversation_id):
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    conversations = Conversation.objects.filter(participants=request.user).order_by('-updated_at')
+
+    return render(request, 'messages.html', {
+        'conversations': conversations,
+        'active_conversation': conversation
+    })
+
+@login_required
+def send_message(request, conversation_id):
+    if request.method == 'POST':
+        content = request.POST.get('message')
+        conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+
+        message = Message.objects.create(
+            conversation=conversation,
+            sender=request.user,
+            content=content
+        )
+        conversation.save()
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'content': message.content,
+                'timestamp': message.timestamp.strftime("%I:%M %p")
+            })
+
+        return redirect('chat_detail', conversation_id=conversation.id)
+
+@login_required
+def start_conversation(request, user_id):
+    other_user = get_object_or_404(User, id=user_id)
+    conversation = Conversation.objects.filter(participants=request.user).filter(participants=other_user).first()
+
+    if not conversation:
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, other_user)
+
+    return redirect('chat_detail', conversation_id=conversation.id)

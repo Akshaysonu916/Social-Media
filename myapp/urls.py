@@ -15,7 +15,6 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('users/', views.users_list, name='users_list'),
     path('notifications/', views.notifications, name='notifications'),
-    path('messages/', views.messages_view, name='messages'),
     path('search/', views.search_view, name='search'),
     path('friends/', views.friends_view, name='friends'),
     path('saved/', views.saved_view, name='saved'),
@@ -40,5 +39,12 @@ urlpatterns = [
     # Post URLs
     path('like_post/<int:post_id>/', views.like_post, name='like_post'),
     path('add_comment/<int:post_id>/', views.add_comment, name='add_comment'),
+
+
+    # messaging URLs
+    path('messages/', views.messages_view, name='messages'),
+    path('start-conversation/<int:user_id>/', views.start_conversation, name='start_conversation'),
+    path('messages/<int:conversation_id>/', views.chat_detail, name='chat_detail'),
+    path('messages/<int:conversation_id>/send/', views.send_message, name='send_message'),
 
 ]

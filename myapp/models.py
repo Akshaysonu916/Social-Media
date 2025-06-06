@@ -85,3 +85,36 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment by {self.user.username} on Post {self.post.id} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
+
+# chat model
+User = get_user_model()
+
+class Conversation(models.Model):
+    participants = models.ManyToManyField(User, related_name='conversations')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        # Show usernames in alphabetical order for consistency
+        usernames = sorted([user.username for user in self.participants.all()])
+        return " & ".join(usernames)
+
+    @property
+    def last_message(self):
+        return self.messages.order_by('-timestamp').first()
+
+    def get_other_participant(self, current_user):
+        """
+        Returns the other participant in a 2-user conversation.
+        If more than 2 users, returns the first one that isn't the current user.
+        """
+        return self.participants.exclude(id=current_user.id).first()
+
+class Message(models.Model):
+    conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.content[:20]}"
