@@ -297,12 +297,12 @@ def messages_view(request):
     conversations = Conversation.objects.filter(participants=current_user).prefetch_related('participants', 'messages').order_by('-updated_at')
 
     # Build a dict of user_id -> conversation
-    conversation_dict = {}
+    conversation_partners = {}
     for convo in conversations:
         other_user = convo.get_other_participant(current_user)
         if other_user:
             convo.other_participant = other_user
-            conversation_dict[other_user.id] = convo
+            conversation_partners[convo.id] = other_user
 
     # Get the first conversation to show on the right side
     active_conversation = conversations.first()
@@ -311,19 +311,35 @@ def messages_view(request):
 
     context = {
         'all_users': all_users,
-        'conversation_dict': conversation_dict,
+        'conversations': conversations,
         'active_conversation': active_conversation,
+        'conversation_partners': conversation_partners,
     }
     return render(request, 'messages.html', context)
 
 @login_required
 def chat_detail(request, conversation_id):
+    # Get the current conversation the user clicked
     conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+
+    # Get all conversations the user is in
     conversations = Conversation.objects.filter(participants=request.user).order_by('-updated_at')
+
+    # Create a dictionary to map each conversation ID to its partner (other user)
+    conversation_partners = {}
+    for convo in conversations:
+        partner = convo.participants.exclude(id=request.user.id).first()
+        if partner:
+            conversation_partners[convo.id] = partner
+
+    # Get the participant of the active conversation (excluding current user)
+    active_partner = conversation.participants.exclude(id=request.user.id).first()
 
     return render(request, 'messages.html', {
         'conversations': conversations,
-        'active_conversation': conversation
+        'active_conversation': conversation,
+        'conversation_partners': conversation_partners,
+        'active_partner': active_partner,
     })
 
 @login_required

@@ -1,12 +1,14 @@
 {% extends "navbar.html" %}
+{% load static %}
 {% load custom_filters %}
+
 {% block title %}Messages - SocialApp{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-100">
     <div class="flex h-[calc(100vh-70px)] bg-white rounded-lg shadow-sm">
-        <!-- Left sidebar - User list -->
-        <aside class="w-[350px] border-r border-gray-200 overflow-y-auto" aria-label="User list">
+        <!-- Left sidebar -->
+        <aside class="w-[350px] border-r border-gray-200 overflow-y-auto">
             <div class="flex justify-between items-center p-4 border-b border-gray-200">
                 <h2 class="text-xl font-semibold">Messages</h2>
             </div>
@@ -15,94 +17,95 @@
                 <i class="fas fa-search absolute left-6 top-6 text-gray-500 pointer-events-none"></i>
                 <input
                     type="search"
-                    placeholder="Search users..."
+                    placeholder="Search..."
                     class="w-full pl-8 pr-3 py-2 rounded-full border border-gray-300 bg-gray-100"
-                    aria-label="Search users"
-                    spellcheck="false"
+                    id="search-users"
                 >
             </div>
 
-            <nav class="py-1" aria-label="Conversation users">
-                {% for user in all_users %}
-                    {% with conversation=conversation_dict|get_item:user.id %}
-                        <a
-                            href="{% if conversation %}{% url 'chat_detail' conversation.id %}{% else %}{% url 'start_conversation' user.id %}{% endif %}"
-                            class="block focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <div
-                                class="flex p-3 cursor-pointer relative hover:bg-gray-100"
-                                role="listitem"
-                            >
+            <nav class="py-1" id="users-list">
+                {% if conversations %}
+                    {% for convo in conversations %}
+                        {% with user=conversation_partners|dict_key:convo.id %}
+                        <a href="{% url 'chat_detail' convo.id %}" class="block hover:bg-gray-100">
+                            <div class="flex p-3">
                                 <div class="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
-                                    <img
-                                        src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
-                                        alt="{{ user.username }}'s profile picture"
-                                        class="w-full h-full object-cover"
-                                        loading="lazy"
-                                    >
+                                    <img src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                         alt="{{ user.username }}'s profile"
+                                         class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-center">
                                         <span class="font-semibold truncate">{{ user.username }}</span>
-                                        {% if conversation and conversation.last_message %}
-                                            <time
-                                                class="text-xs text-gray-500 ml-2 whitespace-nowrap"
-                                                datetime="{{ conversation.last_message.timestamp|date:'c' }}"
-                                                title="{{ conversation.last_message.timestamp|date:'DATETIME_FORMAT' }}"
-                                            >
-                                                {{ conversation.last_message.timestamp|timesince }} ago
+                                        {% if convo.last_message %}
+                                            <time class="text-xs text-gray-500" datetime="{{ convo.last_message.timestamp|date:'c' }}">
+                                                {{ convo.last_message.timestamp|timesince }} ago
                                             </time>
                                         {% endif %}
                                     </div>
-                                    {% if conversation and conversation.last_message %}
-                                        <p class="text-sm text-gray-500 truncate mt-1" title="{{ conversation.last_message.content }}">
-                                            {{ conversation.last_message.content|truncatechars:30 }}
+                                    {% if convo.last_message %}
+                                        <p class="text-sm text-gray-500 truncate mt-1">
+                                            {{ convo.last_message.content|truncatechars:30 }}
                                         </p>
                                     {% endif %}
                                 </div>
                             </div>
                         </a>
-                    {% endwith %}
+                        {% endwith %}
+                    {% endfor %}
+                {% else %}
+                    <div class="flex flex-col items-center justify-center h-48 text-gray-500">
+                        <i class="fas fa-user text-5xl mb-4 opacity-50"></i>
+                        <p>No conversations found</p>
+                    </div>
+                {% endif %}
+
+                 
+                <!-- Optional: Show all users to start new conversations (uncomment if needed) -->
+                {% comment %}
+                {% for user in all_users %}
+                    <a href="{% url 'start_conversation' user.id %}" class="block hover:bg-gray-100">
+                        <div class="flex p-3">
+                            <div class="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
+                                <img src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                     alt="{{ user.username }}'s profile"
+                                     class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <span class="font-semibold truncate">{{ user.username }}</span>
+                            </div>
+                        </div>
+                    </a>
                 {% empty %}
                     <div class="flex flex-col items-center justify-center h-48 text-gray-500">
-                        <i class="fas fa-user text-5xl mb-4 opacity-50" aria-hidden="true"></i>
-                        <p>No other users found</p>
+                        <i class="fas fa-user text-5xl mb-4 opacity-50"></i>
+                        <p>No users found</p>
                     </div>
                 {% endfor %}
+                {% endcomment %}
+                
             </nav>
         </aside>
 
-        <!-- Right side - Message area -->
-        <section class="flex-1 flex flex-col" aria-live="polite" aria-relevant="additions">
+        <!-- Right chat section -->
+        <section class="flex-1 flex flex-col">
             {% if active_conversation %}
-                {% with participant=active_conversation.other_participant %}
-                    <header class="p-4 border-b border-gray-200 flex items-center">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full overflow-hidden mr-3 flex-shrink-0">
-                                <img
-                                    src="{{ participant.profile_picture.url|default:'/static/images/default-profile.png' }}"
-                                    alt="{{ participant.username }}'s profile picture"
-                                    class="w-full h-full object-cover"
-                                    loading="lazy"
-                                >
-                            </div>
-                            <h3 class="font-semibold text-lg">{{ participant.username }}</h3>
+                {% with participant=conversation_partners|dict_key:active_conversation.id %}
+                <header class="p-4 border-b border-gray-200 flex items-center">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                            <img src="{{ participant.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                 alt="{{ participant.username }}'s profile"
+                                 class="w-full h-full object-cover">
                         </div>
-                    </header>
-                {% endwith %}
+                        <h3 class="font-semibold text-lg">{{ participant.username }}</h3>
+                    </div>
+                </header>
 
-                <!-- Messages list -->
-                <main
-                    id="messages-container"
-                    class="flex-1 p-5 overflow-y-auto bg-gray-50 messages-container"
-                    tabindex="0"
-                >
+                <main id="messages-container" class="flex-1 p-5 overflow-y-auto bg-gray-50">
                     {% for message in active_conversation.messages.all %}
-                        <article
-                            class="max-w-[60%] p-3 rounded-2xl mb-4 break-words {% if message.sender == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-200 text-gray-900 mr-auto{% endif %}"
-                            role="article"
-                            aria-label="Message from {{ message.sender.username }}"
-                        >
+                        <article class="max-w-[60%] p-3 rounded-2xl mb-4 break-words
+                            {% if message.sender == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-200 text-gray-900 mr-auto{% endif %}">
                             <p>{{ message.content }}</p>
                             <time class="text-xs block text-right mt-1 opacity-80" datetime="{{ message.timestamp|date:'c' }}">
                                 {{ message.timestamp|time }}
@@ -113,31 +116,17 @@
                     {% endfor %}
                 </main>
 
-                <!-- Message input -->
-                <form
-                    id="chat-form"
-                    class="flex p-4 border-t border-gray-200"
-                    autocomplete="off"
-                    aria-label="Send a message"
-                >
+                <form id="chat-form" class="flex p-4 border-t border-gray-200" autocomplete="off">
                     {% csrf_token %}
-                    <input
-                        id="chat-message-input"
-                        type="text"
-                        placeholder="Type a message..."
-                        autocomplete="off"
-                        class="flex-1 px-4 py-2 rounded-full border border-gray-300 mr-3"
-                        required
-                        aria-required="true"
-                        aria-describedby="messageHelp"
-                    >
-                    <button
-                        id="chat-message-submit"
-                        type="submit"
-                        class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center"
-                        aria-label="Send message"
-                    >
-                        <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                    <input id="chat-message-input"
+                           type="text"
+                           placeholder="Type a message..."
+                           class="flex-1 px-4 py-2 rounded-full border border-gray-300 mr-3"
+                           required>
+                    <button id="chat-message-submit"
+                            type="submit"
+                            class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                        <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
 
@@ -149,11 +138,10 @@
 
                         const chatSocket = new WebSocket(
                             (window.location.protocol === "https:" ? "wss://" : "ws://") +
-                            window.location.host +
-                            '/ws/chat/' + conversationId + '/'
+                            window.location.host + '/ws/chat/' + conversationId + '/'
                         );
 
-                        const messagesContainer = document.querySelector('.messages-container');
+                        const messagesContainer = document.querySelector('#messages-container');
                         const inputField = document.getElementById('chat-message-input');
                         const form = document.getElementById('chat-form');
 
@@ -165,60 +153,53 @@
 
                         chatSocket.onmessage = function(e) {
                             const data = JSON.parse(e.data);
-                            const message = data['message'];
-                            const senderId = Number(data['sender_id']);
+                            const message = data.message;
+                            const senderId = Number(data.sender_id);
 
-                            const messageDiv = document.createElement('article');
-                            messageDiv.classList.add('max-w-[60%]', 'p-3', 'rounded-2xl', 'mb-4', 'break-words');
-                            messageDiv.setAttribute('role', 'article');
-                            messageDiv.setAttribute('aria-label', senderId === userId ? 'Your message' : 'Message from participant');
+                            const article = document.createElement('article');
+                            article.classList.add('max-w-[60%]', 'p-3', 'rounded-2xl', 'mb-4', 'break-words');
+                            article.setAttribute('role', 'article');
 
                             if (senderId === userId) {
-                                messageDiv.classList.add('bg-blue-500', 'text-white', 'ml-auto');
+                                article.classList.add('bg-blue-500', 'text-white', 'ml-auto');
                             } else {
-                                messageDiv.classList.add('bg-gray-200', 'text-gray-900', 'mr-auto');
+                                article.classList.add('bg-gray-200', 'text-gray-900', 'mr-auto');
                             }
 
-                            const p = document.createElement('p');
-                            p.textContent = message;
-                            messageDiv.appendChild(p);
+                            article.innerHTML = `
+                                <p>${message}</p>
+                                <time class="text-xs block text-right mt-1 opacity-80">${new Date().toLocaleTimeString()}</time>
+                            `;
 
-                            const span = document.createElement('time');
-                            span.classList.add('text-xs', 'block', 'text-right', 'mt-1', 'opacity-80');
-                            span.textContent = new Date().toLocaleTimeString();
-                            messageDiv.appendChild(span);
-
-                            messagesContainer.appendChild(messageDiv);
+                            messagesContainer.appendChild(article);
                             scrollToBottom();
                         };
 
-                        chatSocket.onclose = function(e) {
+                        chatSocket.onclose = function() {
                             console.error('Chat socket closed unexpectedly');
                         };
 
-                        function sendMessage() {
-                            const message = inputField.value.trim();
-                            if (message === '') return;
-                            chatSocket.send(JSON.stringify({'message': message}));
-                            inputField.value = '';
-                        }
-
                         form.addEventListener('submit', function(e) {
                             e.preventDefault();
-                            sendMessage();
+                            const message = inputField.value.trim();
+                            if (message !== '') {
+                                chatSocket.send(JSON.stringify({ 'message': message }));
+                                inputField.value = '';
+                            }
                         });
 
                         inputField.addEventListener('keyup', function(e) {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                sendMessage();
+                                form.dispatchEvent(new Event('submit'));
                             }
                         });
                     })();
                 </script>
+                {% endwith %}
             {% else %}
                 <div class="flex flex-col items-center justify-center h-full text-gray-500">
-                    <i class="fas fa-comment-dots text-5xl mb-4 opacity-50" aria-hidden="true"></i>
+                    <i class="fas fa-comment-dots text-5xl mb-4 opacity-50"></i>
                     <h3 class="text-xl font-semibold mb-1">Select a user</h3>
                     <p>Start a conversation by clicking on a user</p>
                 </div>
