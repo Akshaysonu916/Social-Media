@@ -23,11 +23,13 @@
                 >
             </div>
 
+            <!-- Users list -->
             <nav class="py-1" id="users-list">
-                {% if conversations %}
-                    {% for convo in conversations %}
-                        {% with user=conversation_partners|dict_key:convo.id %}
-                        <a href="{% url 'chat_detail' convo.id %}" class="block hover:bg-gray-100">
+                {% for user in all_users %}
+                    {% if user != request.user %}
+                        {% with convo=conversation_partners|dict_key:user.id %}
+                        <a href="{% if convo %}{% url 'chat_detail' convo.id %}{% else %}{% url 'start_conversation' user.id %}{% endif %}"
+                           class="block hover:bg-gray-100 user-item">
                             <div class="flex p-3">
                                 <div class="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
                                     <img src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
@@ -36,69 +38,42 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-center">
-                                        <span class="font-semibold truncate">{{ user.username }}</span>
-                                        {% if convo.last_message %}
+                                        <span class="font-semibold truncate username">{{ user.username }}</span>
+                                        {% if convo and convo.last_message %}
                                             <time class="text-xs text-gray-500" datetime="{{ convo.last_message.timestamp|date:'c' }}">
                                                 {{ convo.last_message.timestamp|timesince }} ago
                                             </time>
                                         {% endif %}
                                     </div>
-                                    {% if convo.last_message %}
+                                    {% if convo and convo.last_message %}
                                         <p class="text-sm text-gray-500 truncate mt-1">
                                             {{ convo.last_message.content|truncatechars:30 }}
                                         </p>
+                                    {% else %}
+                                        <p class="text-sm text-gray-400 mt-1">Start a chat</p>
                                     {% endif %}
                                 </div>
                             </div>
                         </a>
                         {% endwith %}
-                    {% endfor %}
-                {% else %}
-                    <div class="flex flex-col items-center justify-center h-48 text-gray-500">
-                        <i class="fas fa-user text-5xl mb-4 opacity-50"></i>
-                        <p>No conversations found</p>
-                    </div>
-                {% endif %}
-
-                 
-                <!-- Optional: Show all users to start new conversations (uncomment if needed) -->
-                {% comment %}
-                {% for user in all_users %}
-                    <a href="{% url 'start_conversation' user.id %}" class="block hover:bg-gray-100">
-                        <div class="flex p-3">
-                            <div class="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
-                                <img src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
-                                     alt="{{ user.username }}'s profile"
-                                     class="w-full h-full object-cover">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <span class="font-semibold truncate">{{ user.username }}</span>
-                            </div>
-                        </div>
-                    </a>
+                    {% endif %}
                 {% empty %}
-                    <div class="flex flex-col items-center justify-center h-48 text-gray-500">
-                        <i class="fas fa-user text-5xl mb-4 opacity-50"></i>
-                        <p>No users found</p>
-                    </div>
+                    <div class="px-4 py-2 text-gray-500">No users available</div>
                 {% endfor %}
-                {% endcomment %}
-                
             </nav>
         </aside>
 
         <!-- Right chat section -->
         <section class="flex-1 flex flex-col">
             {% if active_conversation %}
-                {% with participant=conversation_partners|dict_key:active_conversation.id %}
                 <header class="p-4 border-b border-gray-200 flex items-center">
                     <div class="flex items-center">
                         <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
-                            <img src="{{ participant.profile_picture.url|default:'/static/images/default-profile.png' }}"
-                                 alt="{{ participant.username }}'s profile"
+                            <img src="{{ active_other_user.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                 alt="{{ active_other_user.username }}'s profile"
                                  class="w-full h-full object-cover">
                         </div>
-                        <h3 class="font-semibold text-lg">{{ participant.username }}</h3>
+                        <h3 class="font-semibold text-lg">{{ active_other_user.username }}</h3>
                     </div>
                 </header>
 
@@ -130,7 +105,6 @@
                     </button>
                 </form>
 
-                <!-- WebSocket Script -->
                 <script>
                     (() => {
                         const conversationId = Number("{{ active_conversation.id }}");
@@ -158,7 +132,6 @@
 
                             const article = document.createElement('article');
                             article.classList.add('max-w-[60%]', 'p-3', 'rounded-2xl', 'mb-4', 'break-words');
-                            article.setAttribute('role', 'article');
 
                             if (senderId === userId) {
                                 article.classList.add('bg-blue-500', 'text-white', 'ml-auto');
@@ -196,7 +169,6 @@
                         });
                     })();
                 </script>
-                {% endwith %}
             {% else %}
                 <div class="flex flex-col items-center justify-center h-full text-gray-500">
                     <i class="fas fa-comment-dots text-5xl mb-4 opacity-50"></i>
@@ -207,4 +179,21 @@
         </section>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("search-users");
+    const userItems = document.querySelectorAll("#users-list .user-item");
+
+    searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase();
+
+        userItems.forEach(item => {
+            const usernameSpan = item.querySelector(".username");
+            const username = usernameSpan?.textContent?.toLowerCase() || "";
+            item.style.display = username.includes(query) ? "block" : "none";
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -290,57 +290,74 @@ User = get_user_model()
 def messages_view(request):
     current_user = request.user
 
-    # All users except the logged-in one
+    # All users except the logged-in user
     all_users = User.objects.exclude(id=current_user.id)
 
-    # All conversations of the current user
-    conversations = Conversation.objects.filter(participants=current_user).prefetch_related('participants', 'messages').order_by('-updated_at')
+    # All conversations involving current user, prefetch related for efficiency
+    conversations = (
+        Conversation.objects
+        .filter(participants=current_user)
+        .prefetch_related('participants', 'messages')
+        .order_by('-updated_at')
+    )
 
-    # Build a dict of user_id -> conversation
+    # Map other_user.id -> conversation object for quick lookup in template
     conversation_partners = {}
     for convo in conversations:
         other_user = convo.get_other_participant(current_user)
         if other_user:
-            convo.other_participant = other_user
-            conversation_partners[convo.id] = other_user
+            conversation_partners[other_user.id] = convo
 
-    # Get the first conversation to show on the right side
+    # Pick first conversation to display in chat area (if any)
     active_conversation = conversations.first()
+    
+    # Also add the other participant for the active conversation for convenience
+    active_other_user = None
     if active_conversation:
-        active_conversation.other_participant = active_conversation.get_other_participant(current_user)
+        active_other_user = active_conversation.get_other_participant(current_user)
 
     context = {
         'all_users': all_users,
         'conversations': conversations,
         'active_conversation': active_conversation,
+        'active_other_user': active_other_user,
         'conversation_partners': conversation_partners,
     }
     return render(request, 'messages.html', context)
 
 @login_required
 def chat_detail(request, conversation_id):
-    # Get the current conversation the user clicked
-    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    current_user = request.user
 
-    # Get all conversations the user is in
-    conversations = Conversation.objects.filter(participants=request.user).order_by('-updated_at')
+    # Fetch the conversation with the given ID that includes the current user
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=current_user)
 
-    # Create a dictionary to map each conversation ID to its partner (other user)
+    # Fetch all conversations involving current user, ordered by most recently updated
+    conversations = Conversation.objects.filter(participants=current_user).order_by('-updated_at')
+
+    # Map other participant's user ID to their conversation object for quick lookup in the sidebar
     conversation_partners = {}
     for convo in conversations:
-        partner = convo.participants.exclude(id=request.user.id).first()
-        if partner:
-            conversation_partners[convo.id] = partner
+        other_user = convo.get_other_participant(current_user)
+        if other_user:
+            conversation_partners[other_user.id] = convo
 
-    # Get the participant of the active conversation (excluding current user)
-    active_partner = conversation.participants.exclude(id=request.user.id).first()
+    # Get all users except the current user (for the sidebar user list)
+    all_users = User.objects.exclude(id=current_user.id)
 
-    return render(request, 'messages.html', {
+    # Get the other participant in the active conversation (for chat header display)
+    active_other_user = conversation.get_other_participant(current_user)
+
+    context = {
+        'all_users': all_users,
         'conversations': conversations,
         'active_conversation': conversation,
         'conversation_partners': conversation_partners,
-        'active_partner': active_partner,
-    })
+        'active_other_user': active_other_user,
+    }
+
+    return render(request, 'messages.html', context)
+
 
 @login_required
 def send_message(request, conversation_id):
