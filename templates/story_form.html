@@ -1,16 +1,92 @@
 {% extends 'navbar.html' %}
 {% load static %}
+
 {% block content %}
 <div class="max-w-md mx-auto p-4">
     <h2 class="text-2xl font-bold mb-4">Create Story</h2>
     <form method="POST" enctype="multipart/form-data" class="space-y-4">
         {% csrf_token %}
-        <div class="space-y-2">
-            {{ form.as_p }}
+        
+        <!-- Image Field -->
+        <div>
+            <label for="id_image" class="block font-medium">Image:</label>
+            {{ form.image }}
         </div>
+
+        <!-- Video Field -->
+        <div>
+            <label for="id_video" class="block font-medium">Video:</label>
+            {{ form.video }}
+        </div>
+
+        <!-- Caption Field with Emoji Picker -->
+        <div>
+            <label for="id_caption" class="block font-medium">Caption:</label>
+            <div class="relative">
+                <textarea name="caption" id="id_caption" rows="3" 
+                    class="w-full p-2 border rounded" 
+                    placeholder="Write a caption..."></textarea>
+                <button type="button" id="emoji-button" 
+                    class="absolute right-2 bottom-2 text-xl hover:text-2xl transition-all">
+                    😊
+                </button>
+                <emoji-picker id="emoji-picker" class="hidden absolute right-0 bottom-10 z-50"></emoji-picker>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
         <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
             Upload
         </button>
     </form>
 </div>
+
+<!-- Modern Emoji Picker -->
+<script type="module">
+    import 'https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js';
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const button = document.getElementById('emoji-button');
+        const picker = document.getElementById('emoji-picker');
+        const textarea = document.getElementById('id_caption');
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            picker.classList.toggle('hidden');
+        });
+
+        picker.addEventListener('emoji-click', (event) => {
+            const emoji = event.detail.unicode;
+            const startPos = textarea.selectionStart;
+            const endPos = textarea.selectionEnd;
+            
+            textarea.value = textarea.value.substring(0, startPos) + 
+                             emoji + 
+                             textarea.value.substring(endPos);
+            
+            textarea.selectionStart = textarea.selectionEnd = startPos + emoji.length;
+            textarea.focus();
+            picker.classList.add('hidden');
+        });
+
+        // Close picker when clicking outside
+        document.addEventListener('click', () => {
+            picker.classList.add('hidden');
+        });
+    });
+</script>
+
+<style>
+    emoji-picker {
+        --width: 300px;
+        --height: 300px;
+        --num-columns: 8;
+        --emoji-size: 1.5rem;
+    }
+    
+    /* Prevent the picker from closing when clicking inside it */
+    emoji-picker {
+        pointer-events: auto;
+    }
+</style>
 {% endblock %}

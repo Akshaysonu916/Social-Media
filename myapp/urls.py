@@ -34,12 +34,13 @@ urlpatterns = [
     path('story/<int:story_id>/like/', views.like_story, name='like_story'),
     path('story/<int:story_id>/comment/', views.comment_story, name='comment_story'),
     path('story/<int:story_id>/share/', views.share_story, name='share_story'),
+    path('user-stories/<int:user_id>/', views.user_stories, name='user_stories'),
 
 
     # Post URLs
     path('like_post/<int:post_id>/', views.like_post, name='like_post'),
     path('add_comment/<int:post_id>/', views.add_comment, name='add_comment'),
-
+    path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
 
     # messaging URLs
     path('messages/', views.messages_view, name='messages'),

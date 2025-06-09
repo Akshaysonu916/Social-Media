@@ -120,16 +120,16 @@
         position: relative;
         width: 100%;
         max-width: 500px;
-        height: 80vh;
+        height: 70vh;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
         margin: 20px 0;
     }
 
-    .story-content {
+    .story-media-container {
         width: 95%;
-        height: 95%;
+        height: 100%;
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
@@ -145,6 +145,41 @@
 
     .story-media:hover {
         transform: scale(1.02);
+    }
+
+    .story-caption-container {
+        width: 95%;
+        padding: 15px 0;
+        color: white;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .story-caption-user {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+    }
+
+    .story-caption-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .story-caption-username {
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .story-caption {
+        font-size: 14px;
+        line-height: 1.5;
+        margin-top: 8px;
+        padding: 0 10px;
+        word-break: break-word;
     }
 
     .story-actions {
@@ -351,7 +386,7 @@
     </div>
 
     <div class="story-content-container">
-        <div class="story-content">
+        <div class="story-media-container">
             {% if story.image %}
                 <img src="{{ story.image.url }}" class="story-media" alt="Story Image">
             {% elif story.video %}
@@ -365,6 +400,22 @@
                 </div>
             {% endif %}
         </div>
+        
+        {% if story.caption %}
+        <div class="story-caption-container">
+            <div class="story-caption-user">
+                {% if story.user.profile_picture %}
+                    <img src="{{ story.user.profile_picture.url }}" class="story-caption-avatar" alt="{{ story.user.username }}">
+                {% else %}
+                    <img src="{% static 'default-avatar.png' %}" class="story-caption-avatar" alt="Default Avatar">
+                {% endif %}
+                <span class="story-caption-username">{{ story.user.username }}</span>
+            </div>
+            <div class="story-caption">
+                {{ story.caption }}
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <div class="story-actions">
@@ -416,7 +467,7 @@
 
         startProgress();
 
-        const storyContent = document.querySelector('.story-content');
+        const storyContent = document.querySelector('.story-media-container');
         storyContent.addEventListener('mouseenter', () => clearInterval(interval));
         storyContent.addEventListener('mouseleave', () => startProgress());
 

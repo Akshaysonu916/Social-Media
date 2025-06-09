@@ -10,14 +10,15 @@ from .models import *
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from collections import defaultdict
+from django.views.decorators.http import require_POST
 
 
 # Create your views here.
 
-@login_required
 def home_view(request):
     now = timezone.now()
-    stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24)).order_by('-created_at')
+    stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24)).select_related('user').order_by('user', '-created_at')
     posts = Post.objects.all().order_by('-created_at')
     post_form = PostForm()
 
@@ -29,8 +30,20 @@ def home_view(request):
             new_post.save()
             return redirect('home')
 
+    # Group stories by user
+    story_groups = []
+    user_stories_dict = defaultdict(list)
+    
+    # Group stories by user
+    for story in stories:
+        user_stories_dict[story.user].append(story)
+    
+    # Convert to list of tuples (user, stories_list)
+    for user, user_stories in user_stories_dict.items():
+        story_groups.append((user, user_stories))
+
     context = {
-        'stories': stories,
+        'story_groups': story_groups,  # This is what your template expects
         'posts': posts,
         'post_form': post_form,
     }
@@ -171,11 +184,46 @@ def story_detail(request, pk):
     }
     return render(request, 'story_detail.html', context)
 
+
 def story_list(request):
-    from datetime import timedelta
     now = timezone.now()
-    stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24))
-    return render(request, 'home.html', {'stories': stories})
+    recent_stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24)).order_by('-created_at')
+
+    # Group stories by user and pick the latest one (or first)
+    story_groups = {}
+    for story in recent_stories:
+        if story.user not in story_groups:  # Only keep the latest story per user
+            story_groups[story.user] = story  # or story.user.profile_picture if available
+    
+    return render(request, 'home.html', {'story_groups': story_groups.items()})
+
+
+@login_required
+def user_stories(request, user_id):
+    # Get the specific user
+    user = get_object_or_404(User, id=user_id)
+    
+    # Get their active stories (within last 24 hours)
+    user_stories = Story.objects.filter(
+        user=user,
+        created_at__gte=timezone.now() - timedelta(hours=24)
+    ).order_by('-created_at')
+    
+    # If no stories found, redirect back or show message
+    if not user_stories.exists():
+        from django.contrib import messages
+        messages.info(request, f"{user.username} has no active stories.")
+        return redirect('home')
+    
+    context = {
+        'story_user': user,  # The user whose stories we're viewing
+        'stories': user_stories,  # Their stories
+    }
+    
+    # Use the user_stories template (Instagram-style viewer)
+    return render(request, 'user_stories.html', context)
+
+
 
 def delete_story(request, story_id):
     story = get_object_or_404(Story, id=story_id)
@@ -196,21 +244,27 @@ def delete_story(request, story_id):
 
 @login_required
 def like_story(request, story_id):
-    story = Story.objects.get(id=story_id)
-    user = request.user
+    try:
+        story = Story.objects.get(id=story_id)
+        user = request.user
 
-    liked = StoryLike.objects.filter(story=story, user=user).exists()
-    if liked:
-        # Unlike
-        StoryLike.objects.filter(story=story, user=user).delete()
-        liked = False
-    else:
-        # Like
-        StoryLike.objects.create(story=story, user=user)
-        liked = True
+        liked = StoryLike.objects.filter(story=story, user=user).exists()
+        if liked:
+            StoryLike.objects.filter(story=story, user=user).delete()
+            liked = False
+        else:
+            StoryLike.objects.create(story=story, user=user)
+            liked = True
 
-    likes_count = story.likes.count()
-    return JsonResponse({'liked': liked, 'likes_count': likes_count})
+        return JsonResponse({
+            'liked': liked, 
+            'likes_count': story.likes.count()
+        })
+        
+    except Story.DoesNotExist:
+        return JsonResponse({'error': 'Story not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
@@ -243,22 +297,27 @@ def share_story(request, story_id):
 
 # post views
 @login_required
-@csrf_exempt  # Ideally handle CSRF properly in AJAX
+@require_POST
 def like_post(request, post_id):
-    if request.method == 'POST':
-        post = get_object_or_404(Post, id=post_id)
-        user = request.user
+    post = get_object_or_404(Post, id=post_id)
+    user = request.user
 
-        if user in post.likes.all():
-            post.likes.remove(user)
-            liked = False
-        else:
-            post.likes.add(user)
-            liked = True
+    # Check if user already liked the post
+    liked = user in post.likes.all()
+    
+    # Toggle like status
+    if liked:
+        post.likes.remove(user)
+        liked = False
+    else:
+        post.likes.add(user)
+        liked = True
 
-        return JsonResponse({'liked': liked, 'total_likes': post.likes.count()})
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+    return JsonResponse({
+        'liked': liked,
+        'total_likes': post.likes.count(),
+        'status': 'success'
+    })
 
 
 @login_required
@@ -280,6 +339,13 @@ def add_comment(request, post_id):
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user == post.user:  # Ensure only the post owner can delete
+        post.delete()
+    return redirect('home')  # Redirect back to home after deletion
 
 
 # message views

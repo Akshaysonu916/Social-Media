@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ story_user.username }}'s Stories</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            color: white;
+            touch-action: manipulation;
+        }
+        .story-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .story-viewer {
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .progress-container {
+            display: flex;
+            padding: 12px 16px 8px;
+            gap: 4px;
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            z-index: 15;
+        }
+        .progress-bar {
+            flex: 1;
+            height: 2px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 1px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #fff;
+            width: 0%;
+            border-radius: 1px;
+            transition: width 0.1s linear;
+        }
+        .progress-fill.completed { width: 100% !important; }
+        .progress-fill.active { width: 100%; transition: width 5s linear; }
+
+        .story-header {
+            position: absolute; 
+            top: 20px; 
+            left: 0; 
+            right: 0;
+            padding: 0 16px;
+            display: flex; 
+            align-items: center; 
+            gap: 12px;
+            z-index: 10; 
+            color: white;
+        }
+        .user-avatar {
+            width: 32px; 
+            height: 32px;
+            border-radius: 50%; 
+            background: #333;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .user-avatar img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .username { 
+            font-weight: 600; 
+            font-size: 14px; 
+            line-height: 1.2;
+        }
+        .story-time { 
+            font-size: 12px; 
+            color: rgba(255,255,255,0.7); 
+            margin-top: 2px;
+        }
+        .close-btn {
+            margin-left: auto;
+            background: none; 
+            border: none; 
+            color: white;
+            font-size: 24px; 
+            cursor: pointer;
+            opacity: 0.9;
+        }
+
+        .story-content {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            overflow: hidden;
+        }
+        .story-item {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .story-item.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .story-media {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .story-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .story-caption {
+            position: absolute;
+            bottom: 120px;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.5));
+            z-index: 5;
+        }
+        .caption-text {
+            color: white;
+            font-size: 15px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .caption-meta {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+        }
+        .caption-likes {
+            display: flex;
+            align-items: center;
+            margin-right: 12px;
+        }
+        .caption-likes i {
+            margin-right: 4px;
+            font-size: 14px;
+        }
+
+        .comments-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            transform: translateY(calc(100% - 50px));
+            transition: transform 0.3s ease;
+            z-index: 20;
+            max-height: 60vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .comments-container.open {
+            transform: translateY(0);
+        }
+        .comments-header {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .comments-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .close-comments {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .comments-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+        }
+        .comment {
+            display: flex;
+            margin-bottom: 12px;
+            align-items: flex-start;
+        }
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 12px;
+            background: #333;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .comment-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .comment-content {
+            flex: 1;
+        }
+        .comment-user {
+            font-weight: 600;
+            font-size: 13px;
+            margin-right: 6px;
+        }
+        .comment-text {
+            font-size: 14px;
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+        .comment-time {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 4px;
+        }
+        .comment-like {
+            margin-left: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .comment-like.active {
+            color: #ff3040;
+        }
+        .no-comments {
+            text-align: center;
+            padding: 40px 0;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+        }
+        
+        .comment-input-container {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.5);
+        }
+        .comment-input {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        .comment-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        .comment-post-btn {
+            margin-left: 8px;
+            background: none;
+            border: none;
+            color: #0095f6;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        .comment-post-btn.active {
+            opacity: 1;
+        }
+
+        .interaction-buttons {
+            position: absolute;
+            right: 16px;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+        .interaction-btn {
+            background: none; 
+            border: none; 
+            color: white;
+            font-size: 24px; 
+            cursor: pointer;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            opacity: 0.9;
+            transition: transform 0.2s;
+        }
+        .interaction-btn:active {
+            transform: scale(1.2);
+        }
+        .interaction-btn.liked {
+            color: #ff3040;
+        }
+
+        .story-nav {
+            position: absolute; 
+            top: 0; 
+            bottom: 0;
+            width: 50%;
+            z-index: 5;
+            cursor: pointer;
+        }
+        .story-nav.prev { left: 0; }
+        .story-nav.next { right: 0; }
+
+        .reply-handle {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            cursor: pointer;
+        }
+        .handle-bar {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 2px;
+        }
+
+        .double-tap-heart {
+            pointer-events: none;
+            z-index: 1000;
+            position: absolute;
+            font-size: 50px;
+            color: #fff;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s;
+        }
+
+        .comment.pending {
+            opacity: 0.7;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            z-index: 1000;
+            font-size: 14px;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="story-container">
+    <div class="story-viewer">
+        <div class="progress-container">
+            {% for story in stories %}
+                <div class="progress-bar"><div class="progress-fill" data-story-index="{{ forloop.counter0 }}"></div></div>
+            {% endfor %}
+        </div>
+
+        <div class="story-header">
+            <div class="user-avatar">
+                {% if story_user.profile_picture %}
+                    <img src="{{ story_user.profile_picture.url }}" alt="User">
+                {% else %}
+                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
+                        {{ story_user.username|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="user-info">
+                <div class="username">{{ story_user.username }}</div>
+                <div class="story-time" id="story-time"></div>
+            </div>
+            <button class="close-btn" onclick="goBack()">&times;</button>
+        </div>
+
+        <div class="story-content">
+            {% for story in stories %}
+            <div class="story-item" data-story-id="{{ story.id }}" data-created="{{ story.created_at|date:'c' }}">
+                <div class="story-media">
+                    {% if story.image %}
+                        <img src="{{ story.image.url }}" class="story-image" alt="Story Image">
+                    {% endif %}
+                </div>
+
+                {% if story.content %}
+                <div class="story-caption">
+                    <div class="caption-text">{{ story.content }}</div>
+                    <div class="caption-meta">
+                        <div class="caption-likes">
+                            <i class="fas fa-heart"></i>
+                            <span id="like-count-{{ story.id }}">{{ story.likes.count }}</span>
+                        </div>
+                        <span>{{ story.created_at|timesince }} ago</span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="interaction-buttons">
+                    <button class="interaction-btn {% if request.user in story.likes.all %}liked{% endif %}" 
+                            onclick="likeStory('{{ story.id }}')" id="like-btn-{{ story.id }}">
+                            <i class="fas fa-heart"></i>
+                    </button>
+                    <button class="interaction-btn" onclick="toggleComments('{{ story.id }}')">
+                        <i class="fas fa-comment"></i>
+                    </button>
+                    <button class="interaction-btn" onclick="shareStory('{{ story.id }}')">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+
+                <div class="reply-handle" onclick="toggleComments('{{ story.id }}')">
+                    <div class="handle-bar"></div>
+                </div>
+
+                <div class="comments-container" id="comments-{{ story.id }}">
+                    <div class="comments-header">
+                        <div class="comments-title">Comments</div>
+                        <button class="close-comments" onclick="toggleComments('{{ story.id }}')">&times;</button>
+                    </div>
+                    <div class="comments-list" id="comments-list-{{ story.id }}">
+                        {% for comment in story.comments.all %}
+                            <div class="comment" data-comment-id="{{ comment.id }}">
+                                <div class="comment-avatar">
+                                    {% if comment.user.profile_picture %}
+                                        <img src="{{ comment.user.profile_picture.url }}" alt="{{ comment.user.username }}">
+                                    {% else %}
+                                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
+                                            {{ comment.user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="comment-content">
+                                    <div>
+                                        <span class="comment-user">{{ comment.user.username }}</span>
+                                        <span class="comment-text">{{ comment.text }}</span>
+                                    </div>
+                                    <div class="comment-time">{{ comment.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="no-comments">No comments yet</div>
+                        {% endfor %}
+                    </div>
+                    <div class="comment-input-container">
+                        <input type="text" class="comment-input" placeholder="Add a comment..." 
+                               id="comment-text-{{ story.id }}" oninput="checkCommentInput('{{ story.id }}')">
+                        <button class="comment-post-btn" id="post-btn-{{ story.id }}" 
+                                onclick="postComment('{{ story.id }}')">Post</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="story-nav prev" onclick="previousStory()"></div>
+        <div class="story-nav next" onclick="nextStory()"></div>
+    </div>
+</div>
+
+<script>
+    // Utility functions - copied from working template
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+
+    // Story viewer functionality
+    let currentStoryIndex = 0;
+    let isPaused = false;
+    const stories = document.querySelectorAll('.story-item');
+    const progressBars = document.querySelectorAll('.progress-fill');
+    let progressTimer;
+    const storyDuration = 5000;
+    let commentsOpen = false;
+    let lastTapTime = 0;
+    const csrftoken = getCookie('csrftoken');
+
+    // Initialize story viewer
+    if (stories.length > 0) {
+        showStory(0);
+        setupDoubleTap();
+    } else {
+        document.querySelector('.story-content').innerHTML = '<div style="color:white;text-align:center;padding:40px;">No stories available</div>';
+    }
+
+    function showStory(index) {
+        // Close any open comments when changing stories
+        document.querySelectorAll('.comments-container').forEach(c => {
+            c.classList.remove('open');
+            commentsOpen = false;
+        });
+        
+        stories.forEach(s => s.classList.remove('active'));
+        if (stories[index]) {
+            stories[index].classList.add('active');
+            updateStoryTime(index);
+            stories[index].addEventListener('mouseenter', pauseStory);
+            stories[index].addEventListener('mouseleave', resumeStory);
+            startProgress(index);
+        }
+    }
+
+    function pauseStory() {
+        isPaused = true;
+        clearTimeout(progressTimer);
+        const activeProgress = document.querySelector('.progress-fill.active');
+        if (activeProgress) {
+            activeProgress.style.transition = 'none';
+            const computedStyle = getComputedStyle(activeProgress);
+            const currentWidth = parseFloat(computedStyle.width);
+            activeProgress.dataset.pausedWidth = currentWidth;
+        }
+    }
+
+    function resumeStory() {
+        if (isPaused && !commentsOpen) {
+            isPaused = false;
+            const activeProgress = document.querySelector('.progress-fill.active');
+            if (activeProgress) {
+                const pausedWidth = parseFloat(activeProgress.dataset.pausedWidth || '0');
+                const remainingWidth = 100 - pausedWidth;
+                const remainingTime = (remainingWidth / 100) * storyDuration;
+                
+                activeProgress.style.transition = `width ${remainingTime}ms linear`;
+                activeProgress.style.width = '100%';
+                
+                progressTimer = setTimeout(nextStory, remainingTime);
+            }
+        }
+    }
+
+    function updateStoryTime(index) {
+        const createdAt = new Date(stories[index].dataset.created);
+        const now = new Date();
+        const diff = Math.floor((now - createdAt) / 1000);
+        let text = 'Just now';
+        if (diff > 86400) text = Math.floor(diff / 86400) + 'd ago';
+        else if (diff > 3600) text = Math.floor(diff / 3600) + 'h ago';
+        else if (diff > 60) text = Math.floor(diff / 60) + 'm ago';
+        document.getElementById('story-time').textContent = text;
+    }
+
+    function startProgress(index) {
+        progressBars.forEach((bar, i) => {
+            bar.classList.remove('active', 'completed');
+            bar.style.width = '0%';
+            bar.style.transition = 'none';
+        });
+        
+        for (let i = 0; i < index; i++) {
+            progressBars[i].classList.add('completed');
+            progressBars[i].style.width = '100%';
+        }
+        
+        progressBars[index].classList.add('active');
+        progressBars[index].style.transition = `width ${storyDuration}ms linear`;
+        progressBars[index].style.width = '100%';
+        
+        progressTimer = setTimeout(nextStory, storyDuration);
+    }
+
+    function nextStory() {
+        clearTimeout(progressTimer);
+        if (currentStoryIndex < stories.length - 1) {
+            currentStoryIndex++;
+            showStory(currentStoryIndex);
+        } else {
+            goBack();
+        }
+    }
+
+    function previousStory() {
+        clearTimeout(progressTimer);
+        if (currentStoryIndex > 0) {
+            currentStoryIndex--;
+            showStory(currentStoryIndex);
+        }
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    function setupDoubleTap() {
+        const storyMedia = document.querySelector('.story-media');
+        
+        storyMedia.addEventListener('click', function(e) {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTapTime;
+            
+            if (tapLength < 300 && tapLength > 0) {
+                // Double tap detected
+                const currentStory = document.querySelector('.story-item.active');
+                const storyId = currentStory.dataset.storyId;
+                likeStory(storyId, e);
+                
+                // Prevent single tap action
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            lastTapTime = currentTime;
+        });
+    }
+
+    // Like functionality - using same approach as working template
+    function likeStory(storyId, event = null) {
+        const likeBtn = document.getElementById(`like-btn-${storyId}`);
+        const likeCount = document.getElementById(`like-count-${storyId}`);
+        
+        // Make API call using same approach as working template
+        fetch(`/story/${storyId}/like/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Accept': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.liked) {
+                likeBtn.classList.add('liked');
+                // Heart animation
+                const heart = likeBtn.querySelector('i');
+                heart.style.transform = 'scale(1.3)';
+                heart.style.transition = 'transform 0.2s';
+                setTimeout(() => {
+                    heart.style.transform = 'scale(1)';
+                }, 200);
+            } else {
+                likeBtn.classList.remove('liked');
+            }
+            likeCount.textContent = data.likes_count;
+        })
+        .catch(() => {
+            showToast('You must be logged in to like');
+        });
+        
+        // Show heart animation at tap location if double tap
+        if (event) {
+            const heart = document.createElement('div');
+            heart.className = 'double-tap-heart';
+            heart.innerHTML = '<i class="fas fa-heart"></i>';
+            heart.style.left = `${event.clientX - 25}px`;
+            heart.style.top = `${event.clientY - 25}px`;
+            document.body.appendChild(heart);
+            
+            setTimeout(() => {
+                heart.style.opacity = '1';
+                heart.style.transform = 'scale(1)';
+            }, 10);
+            
+            setTimeout(() => {
+                heart.style.opacity = '0';
+                heart.style.transform = 'scale(1.5)';
+                setTimeout(() => heart.remove(), 500);
+            }, 600);
+        }
+    }
+
+    // Comment functionality - using same approach as working template
+    function toggleComments(storyId) {
+        const commentsContainer = document.getElementById(`comments-${storyId}`);
+        commentsOpen = !commentsOpen;
+        
+        if (commentsOpen) {
+            pauseStory();
+            commentsContainer.classList.add('open');
+            document.getElementById(`comment-text-${storyId}`).focus();
+        } else {
+            commentsContainer.classList.remove('open');
+            resumeStory();
+        }
+    }
+
+    function checkCommentInput(storyId) {
+        const input = document.getElementById(`comment-text-${storyId}`);
+        const postBtn = document.getElementById(`post-btn-${storyId}`);
+        postBtn.classList.toggle('active', input.value.trim().length > 0);
+    }
+
+    function postComment(storyId) {
+        const input = document.getElementById(`comment-text-${storyId}`);
+        const commentText = input.value.trim();
+        
+        if (!commentText) {
+            showToast('Please write a comment');
+            return;
+        }
+
+        // Use same approach as working template
+        fetch(`/story/${storyId}/comment/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({'comment': commentText})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                input.value = '';
+                document.getElementById(`post-btn-${storyId}`).classList.remove('active');
+
+                // Append new comment to comments section
+                const commentsList = document.getElementById(`comments-list-${storyId}`);
+                const noComments = commentsList.querySelector('.no-comments');
+                
+                if (noComments) {
+                    noComments.remove();
+                }
+                
+                const newComment = document.createElement('div');
+                newComment.className = 'comment';
+                newComment.innerHTML = `
+                    <div class="comment-avatar">
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
+                            ${data.comment.user.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="comment-content">
+                        <div>
+                            <span class="comment-user">${data.comment.user}</span>
+                            <span class="comment-text">${data.comment.text}</span>
+                        </div>
+                        <div class="comment-time">just now</div>
+                    </div>
+                `;
+                
+                commentsList.appendChild(newComment);
+                commentsList.scrollTop = commentsList.scrollHeight;
+                
+                showToast('Comment added!');
+            } else {
+                showToast(data.error || 'Failed to add comment');
+            }
+        })
+        .catch(() => {
+            showToast('You must be logged in to comment');
+        });
+    }
+
+    function shareStory(storyId) {
+        const url = `${window.location.origin}/story/${storyId}/`;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('Link copied to clipboard');
+        }).catch(() => {
+            showToast('Failed to copy link');
+        });
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') previousStory();
+        if (e.key === 'ArrowRight') nextStory();
+        if (e.key === 'Escape') goBack();
+    });
+
+    // Touch events for mobile
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+    });
+    
+    document.addEventListener('touchend', (e) => {
+        const touchEndX = e.changedTouches[0].clientX;
+        const diff = touchStartX - touchEndX;
+        
+        if (diff > 50) nextStory(); // Swipe left
+        if (diff < -50) previousStory(); // Swipe right
+    });
+</script>
+</body>
+</html>
