@@ -12,6 +12,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from collections import defaultdict
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+import logging
 
 
 # Create your views here.
@@ -112,8 +114,6 @@ def profile(request):
     return render(request, 'profile.html', {'user': user})
 
 
-def users_list(request):
-    return render(request, 'users_list.html')
 
 def notifications(request):
     return render(request, 'notifications.html')
@@ -456,3 +456,60 @@ def start_conversation(request, user_id):
         conversation.participants.add(request.user, other_user)
 
     return redirect('chat_detail', conversation_id=conversation.id)
+
+
+
+# userlist view
+
+User = get_user_model()
+
+@login_required
+def users_list(request):
+    users = User.objects.exclude(id=request.user.id)  # Exclude self
+    paginator = Paginator(users, 9)  # 9 users per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'users_list.html', {'users': page_obj})
+
+
+@login_required
+def follow_user(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        target_user = CustomUser.objects.get(id=user_id)
+        follow, created = Follow.objects.get_or_create(follower=request.user, following=target_user)
+
+        if not created and follow.is_accepted:
+            return JsonResponse({'status': 'already_following'})
+        elif not created and not follow.is_accepted:
+            return JsonResponse({'status': 'request_pending'})
+
+        return JsonResponse({'status': 'follow_request_sent'})
+
+@login_required
+def unfollow_user(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        Follow.objects.filter(follower=request.user, following_id=user_id).delete()
+        return JsonResponse({'status': 'unfollowed'})
+    
+@login_required
+def profile_detail(request, username):
+    user_profile = get_object_or_404(CustomUser, username=username)
+
+    followers = Follow.objects.filter(following=user_profile)
+    following = Follow.objects.filter(follower=user_profile)
+
+    is_following = Follow.objects.filter(follower=request.user, following=user_profile).exists() if user_profile != request.user else False
+    is_followed_by = Follow.objects.filter(follower=user_profile, following=request.user).exists() if user_profile != request.user else False
+
+    context = {
+        'user_profile': user_profile,
+        'follower_count': followers.count(),
+        'following_count': following.count(),
+        'is_following': is_following,
+        'is_followed_by': is_followed_by,
+    }
+    return render(request, 'profile_detail.html', context)

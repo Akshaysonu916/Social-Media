@@ -1,0 +1,90 @@
+{% extends "navbar.html" %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ user_profile.username }} - Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-10 px-4">
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-center gap-4">
+            <div class="w-20 h-20 rounded-full overflow-hidden">
+                <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="w-full h-full object-cover">
+            </div>
+            <div>
+                <h2 class="text-xl font-bold">{{ user_profile.get_full_name }}</h2>
+                <p class="text-sm text-gray-500">@{{ user_profile.username }}</p>
+                <p class="mt-1 text-gray-700">{{ user_profile.bio|default:"No bio yet." }}</p>
+            </div>
+
+            {% if user_profile != request.user %}
+                <form method="POST" id="follow-form">
+                    {% csrf_token %}
+                    <button type="button" id="follow-btn"
+                            data-user-id="{{ user_profile.id }}"
+                            class="ml-auto px-4 py-2 text-sm rounded-md transition 
+                            {% if is_following %}
+                                bg-green-500 text-white
+                            {% elif is_followed_by %}
+                                bg-yellow-400 text-black
+                            {% else %}
+                                bg-blue-500 text-white
+                            {% endif %}">
+                        {% if is_following %}
+                            <i class="fas fa-check mr-1"></i> Following
+                        {% elif is_followed_by %}
+                            <i class="fas fa-user-plus mr-1"></i> Follow Back
+                        {% else %}
+                            <i class="fas fa-user-plus mr-1"></i> Follow
+                        {% endif %}
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="mt-6 flex gap-6 text-center">
+            <div>
+                <p class="text-lg font-semibold">{{ follower_count }}</p>
+                <p class="text-sm text-gray-500">Followers</p>
+            </div>
+            <div>
+                <p class="text-lg font-semibold">{{ following_count }}</p>
+                <p class="text-sm text-gray-500">Following</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const followBtn = document.getElementById('follow-btn');
+    if (followBtn) {
+        const csrftoken = '{{ csrf_token }}';
+        followBtn.addEventListener('click', () => {
+            const userId = followBtn.dataset.userId;
+            const isFollowing = followBtn.innerText.includes('Following') || followBtn.innerText.includes('Requested');
+            const url = isFollowing ? '/unfollow/' : '/follow/';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `user_id=${userId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'followed') {
+                    followBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Following';
+                    followBtn.className = 'ml-auto px-4 py-2 text-sm rounded-md bg-green-500 text-white';
+                } else if (data.status === 'unfollowed') {
+                    followBtn.innerHTML = '<i class="fas fa-user-plus mr-1"></i> Follow';
+                    followBtn.className = 'ml-auto px-4 py-2 text-sm rounded-md bg-blue-500 text-white';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

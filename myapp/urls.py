@@ -13,7 +13,6 @@ urlpatterns = [
     # Home view
     path('', views.home_view, name='home'),
     path('profile/', views.profile, name='profile'),
-    path('users/', views.users_list, name='users_list'),
     path('notifications/', views.notifications, name='notifications'),
     path('search/', views.search_view, name='search'),
     path('friends/', views.friends_view, name='friends'),
@@ -47,5 +46,12 @@ urlpatterns = [
     path('start-conversation/<int:user_id>/', views.start_conversation, name='start_conversation'),
     path('messages/<int:conversation_id>/', views.chat_detail, name='chat_detail'),
     path('messages/<int:conversation_id>/send/', views.send_message, name='send_message'),
+
+
+    # userlist URLs
+    path('users/', views.users_list, name='users_list'),
+    path('follow/', views.follow_user, name='follow_user'),
+    path('unfollow/', views.unfollow_user, name='unfollow_user'),
+    path('profile/<str:username>/', views.profile_detail, name='profile_detail'),
 
 ]

@@ -1,4 +1,7 @@
 {% extends "navbar.html" %}
+{% load static %}
+{% load custom_filters %}
+
 {% block title %}Users - SocialApp{% endblock %}
 
 {% block content %}
@@ -7,35 +10,56 @@
         <div class="bg-white rounded-lg shadow-sm p-5">
             <div class="mb-5">
                 <h2 class="text-2xl font-semibold text-gray-800">Find People</h2>
-                <div class="relative mt-4">
+                <div class="relative mt-4 search-users">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i class="fas fa-search text-gray-500"></i>
                     </div>
-                    <input type="text" placeholder="Search users..." 
+                    <input type="text" placeholder="Search users..."
                            class="w-full py-2 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {% for user in users %}
                 <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
                     <div class="flex items-center">
                         <div class="w-12 h-12 rounded-full overflow-hidden mr-3">
-                            <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
+                            <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
                         </div>
                         <div>
-                            <h3 class="text-base font-medium text-gray-900">{{ user.get_full_name }}</h3>
+                            <h3 class="text-base font-medium text-gray-900">
+                                <a href="{% url 'profile_detail' user.username %}" class="text-blue-600 hover:underline">
+                                    {{ user.get_full_name }}
+                                </a>
+                            </h3>
                             <p class="text-sm text-gray-500 mt-1">{{ user.bio|default:"No bio yet"|truncatechars:50 }}</p>
                             <span class="text-xs text-gray-500">{{ user.mutual_friends }} mutual friends</span>
                         </div>
                     </div>
-                    <button class="px-3 py-2 bg-gray-200 text-gray-900 rounded-md text-sm whitespace-nowrap hover:bg-gray-300">
-                        {% if user.is_friend %}
-                        <i class="fas fa-check mr-1"></i> Friends
+
+                    {% if user != request.user %}
+                    <button
+                        class="follow-btn px-3 py-2 text-sm rounded-md whitespace-nowrap transition"
+                        data-user-id="{{ user.id }}"
+                        style="
+                            {% if user|is_following:request.user %}
+                                background-color: #22c55e; color: white;
+                            {% elif user|is_followed_by:request.user %}
+                                background-color: #facc15; color: black;
+                            {% else %}
+                                background-color: #3b82f6; color: white;
+                            {% endif %}
+                        "
+                    >
+                        {% if user|is_following:request.user %}
+                            <i class="fas fa-check mr-1"></i> Following
+                        {% elif user|is_followed_by:request.user %}
+                            <i class="fas fa-user-plus mr-1"></i> Follow Back
                         {% else %}
-                        <i class="fas fa-user-plus mr-1"></i> Add Friend
+                            <i class="fas fa-user-plus mr-1"></i> Follow
                         {% endif %}
                     </button>
+                    {% endif %}
                 </div>
                 {% empty %}
                 <div class="col-span-full flex flex-col items-center justify-center py-10 text-gray-500">
@@ -44,13 +68,13 @@
                 </div>
                 {% endfor %}
             </div>
-            
+
             {% if users.has_other_pages %}
             <div class="flex justify-center mt-8">
                 {% if users.has_previous %}
                 <a href="?page={{ users.previous_page_number }}" class="px-4 py-2 border border-gray-300 rounded-l-md hover:bg-gray-100">&laquo;</a>
                 {% endif %}
-                
+
                 {% for num in users.paginator.page_range %}
                 {% if users.number == num %}
                 <a href="?page={{ num }}" class="px-4 py-2 border border-gray-300 bg-blue-600 text-white">{{ num }}</a>
@@ -58,7 +82,7 @@
                 <a href="?page={{ num }}" class="px-4 py-2 border border-gray-300 hover:bg-gray-100">{{ num }}</a>
                 {% endif %}
                 {% endfor %}
-                
+
                 {% if users.has_next %}
                 <a href="?page={{ users.next_page_number }}" class="px-4 py-2 border border-gray-300 rounded-r-md hover:bg-gray-100">&raquo;</a>
                 {% endif %}
@@ -69,29 +93,54 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // In a real app, you would have JavaScript to:
-    // - Handle friend requests
-    // - Implement search functionality
-    // - Load more users on scroll
-    
-    const friendButtons = document.querySelectorAll('.add-friend-btn');
-    friendButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const userId = this.dataset.userId; // You would add this data attribute
-            // Send friend request via AJAX
-            this.innerHTML = '<i class="fas fa-clock"></i> Request Sent';
-            this.style.backgroundColor = '#e4e6eb';
-            this.style.color = '#050505';
+document.addEventListener('DOMContentLoaded', function () {
+    const csrftoken = getCookie('csrftoken');
+
+    document.querySelectorAll('.follow-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const userId = this.dataset.userId;
+            const label = this.innerText.trim();
+            const isFollowing = label.includes('Following');
+            const url = isFollowing ? '/unfollow/' : '/follow/';
+            const btn = this;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken
+                },
+                body: `user_id=${userId}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'followed') {
+                    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Following';
+                    btn.style.backgroundColor = '#22c55e';
+                    btn.style.color = '#ffffff';
+                } else if (data.status === 'unfollowed') {
+                    btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i> Follow';
+                    btn.style.backgroundColor = '#3b82f6';
+                    btn.style.color = '#ffffff';
+                }
+            });
         });
     });
-    
-    // Search functionality
-    const searchInput = document.querySelector('.search-users input');
-    searchInput.addEventListener('input', function() {
-        // In a real app, you would debounce this and make an AJAX request
-        console.log('Searching for:', this.value);
-    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 });
 </script>
 {% endblock %}
