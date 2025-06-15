@@ -5,24 +5,43 @@
 {% block title %}{{ user_profile.username }} - Profile{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto py-10 px-4">
+<div class="max-w-4xl mx-auto py-10 px-4">
+    <!-- Profile Info Card -->
     <div class="bg-white shadow rounded-lg p-6">
-        <div class="flex items-center gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <!-- Profile Picture -->
             <div class="w-20 h-20 rounded-full overflow-hidden">
-                <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="w-full h-full object-cover">
+                {% if user_profile.profile_picture %}
+                    <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="w-full h-full object-cover">
+                {% else %}
+                    <img src="{% static 'images/default-profile.png' %}" alt="Default Profile" class="w-full h-full object-cover">
+                {% endif %}
             </div>
-            <div>
+
+            <!-- User Info -->
+            <div class="flex-1">
                 <h2 class="text-xl font-bold">{{ user_profile.get_full_name }}</h2>
                 <p class="text-sm text-gray-500">@{{ user_profile.username }}</p>
                 <p class="mt-1 text-gray-700">{{ user_profile.bio|default:"No bio yet." }}</p>
+
+                <!-- Followers / Following -->
+                <div class="mt-4 flex gap-6 text-sm font-medium text-blue-600">
+                    <a href="{% url 'follower_list' user_profile.username %}" class="hover:underline">
+                        {{ follower_count }} Followers
+                    </a>
+                    <a href="{% url 'following_list' user_profile.username %}" class="hover:underline">
+                        {{ following_count }} Following
+                    </a>
+                </div>
             </div>
 
+            <!-- Follow Button -->
             {% if user_profile != request.user %}
                 <form method="POST" id="follow-form">
                     {% csrf_token %}
                     <button type="button" id="follow-btn"
                             data-user-id="{{ user_profile.id }}"
-                            class="ml-auto px-4 py-2 text-sm rounded-md transition 
+                            class="px-4 py-2 text-sm rounded-md transition
                             {% if is_following %}
                                 bg-green-500 text-white
                             {% elif is_followed_by %}
@@ -41,30 +60,74 @@
                 </form>
             {% endif %}
         </div>
+    </div>
 
-        <div class="mt-6 flex gap-6 text-center">
-            <div>
-                <p class="text-lg font-semibold">{{ follower_count }}</p>
-                <p class="text-sm text-gray-500">Followers</p>
-            </div>
-            <div>
-                <p class="text-lg font-semibold">{{ following_count }}</p>
-                <p class="text-sm text-gray-500">Following</p>
-            </div>
+    <!-- Tabs -->
+    <div class="mt-8">
+        <ul id="tabs" class="flex space-x-6 text-sm font-medium border-b">
+            <li><button data-tab="posts" class="pb-2 border-b-2 border-blue-500 text-blue-600">Posts</button></li>
+            <li><button data-tab="stories" class="pb-2 text-gray-600 hover:text-blue-600">Stories</button></li>
+            <li><button data-tab="tagged" class="pb-2 text-gray-600 hover:text-blue-600">Tagged</button></li>
+        </ul>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="mt-6">
+        <!-- Posts Tab -->
+        <div id="tab-posts" class="tab-content grid grid-cols-3 gap-4">
+            {% for post in posts %}
+                <div class="aspect-square overflow-hidden rounded-lg shadow">
+                    {% if post.image %}
+                        <a href="{% url 'post_detail' post.id %}">
+                            <img src="{{ post.image.url }}" alt="Post Image" class="w-full h-full object-cover hover:scale-105 transition">
+                        </a>
+                    {% elif post.video %}
+                        <a href="{% url 'post_detail' post.id %}">
+                            <video class="w-full h-full object-cover" controls>
+                                <source src="{{ post.video.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </a>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p class="text-gray-500 col-span-3 text-center">No posts yet.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Stories Tab -->
+        <div id="tab-stories" class="tab-content hidden">
+            {% for story in stories %}
+                <div class="mb-4">
+                    {% if story.image %}
+                        <img src="{{ story.image.url }}" alt="Story Image" class="rounded-lg w-full h-64 object-cover">
+                    {% endif %}
+                    <p class="text-sm mt-2">{{ story.caption }}</p>
+                </div>
+            {% empty %}
+                <p class="text-gray-500 text-center">No stories posted.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Tagged Tab -->
+        <div id="tab-tagged" class="tab-content hidden">
+            <p class="text-gray-500 text-center">No tagged content yet.</p>
         </div>
     </div>
 </div>
 
+<!-- AJAX Follow Button Script -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const followBtn = document.getElementById('follow-btn');
     if (followBtn) {
-        const csrftoken = '{{ csrf_token }}';
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         followBtn.addEventListener('click', () => {
             const userId = followBtn.dataset.userId;
-            const isFollowing = followBtn.innerText.includes('Following') || followBtn.innerText.includes('Requested');
+            const label = followBtn.innerText.trim();
+            const isFollowing = label.includes('Following');
             const url = isFollowing ? '/unfollow/' : '/follow/';
-            
+
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -73,18 +136,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: `user_id=${userId}`
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if (data.status === 'followed') {
                     followBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Following';
-                    followBtn.className = 'ml-auto px-4 py-2 text-sm rounded-md bg-green-500 text-white';
+                    followBtn.className = 'px-4 py-2 text-sm rounded-md bg-green-500 text-white';
                 } else if (data.status === 'unfollowed') {
                     followBtn.innerHTML = '<i class="fas fa-user-plus mr-1"></i> Follow';
-                    followBtn.className = 'ml-auto px-4 py-2 text-sm rounded-md bg-blue-500 text-white';
+                    followBtn.className = 'px-4 py-2 text-sm rounded-md bg-blue-500 text-white';
                 }
             });
         });
     }
+
+    // Tabs Script
+    const tabs = document.querySelectorAll("#tabs button");
+    const contents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+            tabs.forEach(t => t.classList.remove("border-b-2", "text-blue-600"));
+            tab.classList.add("border-b-2", "border-blue-500", "text-blue-600");
+
+            const target = tab.getAttribute("data-tab");
+            contents.forEach(c => c.classList.add("hidden"));
+            document.getElementById(`tab-${target}`).classList.remove("hidden");
+        });
+    });
 });
 </script>
 {% endblock %}

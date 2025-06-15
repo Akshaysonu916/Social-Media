@@ -1,0 +1,26 @@
+{% extends 'navbar.html' %}
+{% load static %}
+
+{% block title %}Post by {{ post.user.username }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-10 px-4 bg-white shadow rounded-lg">
+    <div class="mb-4">
+        <h2 class="text-xl font-bold mb-2">Post by {{ post.user.username }}</h2>
+        {% if post.caption %}
+            <p class="text-gray-700 mb-2">{{ post.caption }}</p>
+        {% endif %}
+        {% if post.image %}
+            <img src="{{ post.image.url }}" alt="Post Image" class="rounded-lg w-full">
+        {% elif post.video %}
+            <video class="w-full rounded-lg" controls>
+                <source src="{{ post.video.url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% else %}
+            <p class="text-sm text-gray-500">No media attached to this post.</p>
+        {% endif %}
+    </div>
+    <p class="text-sm text-gray-500">Posted on {{ post.created_at }}</p>
+</div>
+{% endblock %}

@@ -499,11 +499,20 @@ def unfollow_user(request):
 def profile_detail(request, username):
     user_profile = get_object_or_404(CustomUser, username=username)
 
+    # Followers and Following
     followers = Follow.objects.filter(following=user_profile)
     following = Follow.objects.filter(follower=user_profile)
 
-    is_following = Follow.objects.filter(follower=request.user, following=user_profile).exists() if user_profile != request.user else False
-    is_followed_by = Follow.objects.filter(follower=user_profile, following=request.user).exists() if user_profile != request.user else False
+    # Relationship Status
+    is_following = False
+    is_followed_by = False
+    if user_profile != request.user:
+        is_following = followers.filter(follower=request.user).exists()
+        is_followed_by = following.filter(following=request.user).exists()
+
+    # Fetch posts and stories
+    posts = Post.objects.filter(user=user_profile).order_by('-created_at')
+    stories = Story.objects.filter(user=user_profile).order_by('-created_at')
 
     context = {
         'user_profile': user_profile,
@@ -511,5 +520,35 @@ def profile_detail(request, username):
         'following_count': following.count(),
         'is_following': is_following,
         'is_followed_by': is_followed_by,
+        'posts': posts,
+        'stories': stories,
     }
+
     return render(request, 'profile_detail.html', context)
+
+
+
+User = get_user_model()
+
+def follower_list(request, username):
+    user = get_object_or_404(User, username=username)
+    followers = Follow.objects.filter(following=user).select_related('follower')
+    return render(request, 'followers_list.html', {
+        'user_profile': user,
+        'users': [f.follower for f in followers],
+        'list_type': 'Followers',
+    })
+
+def following_list(request, username):
+    user = get_object_or_404(User, username=username)
+    followings = Follow.objects.filter(follower=user).select_related('following')
+    return render(request, 'followers_list.html', {
+        'user_profile': user,
+        'users': [f.following for f in followings],
+        'list_type': 'Following',
+    })
+
+
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    return render(request, 'post_detail.html', {'post': post})
