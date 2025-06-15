@@ -3,7 +3,43 @@
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-6">
   <h1 class="text-3xl font-bold text-gray-900">Gaming</h1>
-  <p class="text-lg text-gray-600 mt-2">Explore gaming news, groups, and content.</p>
-  <!-- Add gaming related content here -->
+  <p class="text-lg text-gray-600 mt-2 mb-6">Explore gaming news, groups, and content.</p>
+
+  <!-- Chat Bot Section -->
+  <div class="bg-gray-100 p-6 rounded-lg shadow-md max-w-xl mx-auto">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-4">Chat with GameBot 🤖</h2>
+
+    <!-- Chat History Display -->
+    <div id="chat-window" class="space-y-4 max-h-96 overflow-y-auto mb-4">
+      {% for chat in chat_history %}
+        <!-- User Message -->
+        <div class="flex justify-end">
+          <div class="bg-blue-500 text-white px-4 py-2 rounded-lg max-w-xs text-right">
+            You: {{ chat.user }}
+          </div>
+        </div>
+        <!-- Bot Response -->
+        <div class="flex justify-start">
+          <div class="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-lg max-w-xs">
+            Bot: {{ chat.bot }}
+          </div>
+        </div>
+      {% empty %}
+        <p class="text-gray-500">Start the conversation by typing below...</p>
+      {% endfor %}
+    </div>
+
+    <!-- Message Input -->
+    <form method="post" class="mt-4">
+      {% csrf_token %}
+      <div class="flex gap-2">
+        <input type="text" name="message" placeholder="Type something like 'suggest a game'" 
+               class="flex-1 px-3 py-2 border border-gray-300 rounded-md" required>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          Send
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

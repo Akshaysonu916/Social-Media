@@ -129,3 +129,34 @@ class Follow(models.Model):
 
     class Meta:
         unique_together = ('follower', 'following')
+
+
+
+# event model
+class Event(models.Model):
+    EVENT_TYPES = [
+        ('Conference', 'Conference'),
+        ('Workshop', 'Workshop'),
+        ('Networking', 'Networking'),
+        ('Social', 'Social Gathering'),
+        ('Other', 'Other'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPES)
+    date = models.DateTimeField()
+    location = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='event_images/', blank=True, null=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    featured = models.BooleanField(default=False)
+
+    def _str_(self):
+        return self.title
+
+    @property
+    def image_url(self):
+        if self.image and hasattr(self.image, 'url'):
+            return self.image.url
+        return 'https://via.placeholder.com/400x250?text=Event'

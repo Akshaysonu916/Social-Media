@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate , get_user_model
 from django.shortcuts import get_object_or_404
-from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm, PostForm
+from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm, PostForm , EventForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -145,12 +145,6 @@ def memories_view(request):
 def explore_view(request):
     return render(request, 'explore.html')
 
-def events_view(request):
-    # Render a template for Events page
-    return render(request, 'events.html')
-
-def gaming_view(request):
-    return render(request, 'gaming.html')
 
 
 
@@ -552,3 +546,73 @@ def following_list(request, username):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     return render(request, 'post_detail.html', {'post': post})
+
+
+
+# gaming views
+def gaming_view(request):
+    # Initialize session history if not present
+    if "chat_history" not in request.session:
+        request.session["chat_history"] = []
+
+    if request.method == "POST":
+        message = request.POST.get("message", "").strip().lower()
+        response = ""
+
+        # Rule-based bot responses
+        if "game" in message or "suggest" in message:
+            response = "Try out Tic Tac Toe or Snake! 🎮"
+        elif "hello" in message or "hi" in message:
+            response = "Hey gamer! 👋 What can I help you with?"
+        elif "bye" in message:
+            response = "Goodbye! Come back for more games later!"
+        else:
+            response = "Sorry, I didn’t understand that. Try asking for a game suggestion!"
+
+        # Append message-response pair to session chat history
+        chat = request.session["chat_history"]
+        chat.append({
+            "user": message,
+            "bot": response
+        })
+        request.session["chat_history"] = chat
+        request.session.modified = True
+
+    # Pass full history to the template
+    return render(request, "gaming.html", {
+        "chat_history": request.session.get("chat_history", [])
+    })
+
+
+
+# events views
+def events_view(request):
+    events = Event.objects.all().order_by('-date')
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.creator = request.user
+            event.save()
+            return redirect('events_view')
+    else:
+        form = EventForm()
+    
+    return render(request, 'events.html', {
+        'events': events,
+        'form': form
+    })
+
+def event_details(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    data = {
+        'title': event.title,
+        'description': event.description,
+        'type': event.event_type,
+        'date': event.date.strftime('%B %d, %Y'),
+        'location': event.location,
+        'image_url': event.image_url,
+        'organizer': event.creator.username
+    }
+    return JsonResponse(data)

@@ -5,126 +5,207 @@
   <!-- Hero Section -->
   <div class="bg-gradient-to-r from-blue-600 to-cyan-500 text-white py-12">
     <div class="container mx-auto px-4 text-center">
-      <h1 class="text-4xl md:text-5xl font-bold mb-4">Upcoming Events</h1>
-      <p class="text-xl mb-6">Discover exciting activities and connect with our community</p>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Community Events</h1>
+      <p class="text-xl mb-6">Discover exciting activities or share your own events</p>
       <div class="space-x-4">
-        <button class="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 rounded-lg font-medium">Browse Events</button>
-        <button class="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-6 py-3 rounded-lg font-medium">Submit an Event</button>
+        <a href="#events" class="bg-white text-blue-600 hover:bg-gray-100 px-6 py-3 rounded-lg font-medium">Browse Events</a>
+        <button onclick="openEventModal()" class="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-6 py-3 rounded-lg font-medium">Create an Event</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Event Creation Modal -->
+  <div id="eventModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Create New Event</h3>
+        <button onclick="closeEventModal()" class="text-gray-500 hover:text-gray-700">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form id="eventForm" method="POST" enctype="multipart/form-data" action="{% url 'events_view' %}">
+        {% csrf_token %}
+        <div class="space-y-4">
+          {{ form.as_p }}
+        </div>
+        <div class="mt-6 flex justify-end space-x-3">
+          <button type="button" onclick="closeEventModal()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Create Event</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <!-- Main Content -->
   <div class="container mx-auto px-4 py-12">
     <!-- Event Filters -->
-    <div class="mb-8">
-      <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label for="eventType" class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-              <select id="eventType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option selected>All Events</option>
-                <option>Workshops</option>
-                <option>Conferences</option>
-                <option>Social Gatherings</option>
-                <option>Networking</option>
-              </select>
-            </div>
-            <div>
-              <label for="eventDate" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-              <select id="eventDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option selected>Upcoming</option>
-                <option>This Week</option>
-                <option>This Month</option>
-                <option>Next 3 Months</option>
-              </select>
-            </div>
-            <div class="flex items-end">
-              <button class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Apply Filters</button>
-            </div>
+    <div class="mb-8" id="events">
+      <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label for="filterType" class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+            <select id="filterType" class="w-full px-3 py-2 border rounded-md">
+              <option value="all">All Events</option>
+              <option value="Conference">Conferences</option>
+              <option value="Workshop">Workshops</option>
+              <option value="Networking">Networking</option>
+              <option value="Social">Social Gatherings</option>
+            </select>
+          </div>
+          <div>
+            <label for="filterDate" class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <select id="filterDate" class="w-full px-3 py-2 border rounded-md">
+              <option value="upcoming">Upcoming</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+              <option value="all">All Events</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button onclick="filterEvents()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Apply Filters</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Events Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Event Card 1 -->
-      <div class="relative bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md h-full">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="eventsContainer">
+      {% for event in events %}
+      <div class="relative bg-white rounded-xl shadow-sm overflow-hidden hover:-translate-y-1 hover:shadow-md transition h-full">
+        {% if event.featured %}
         <div class="absolute top-3 right-3 bg-red-600 text-white text-xs px-3 py-1 rounded-full z-10">Featured</div>
-        <img src="https://via.placeholder.com/400x250?text=Tech+Conference" class="w-full h-48 object-cover" alt="Tech Conference">
+        {% endif %}
+        <img src="{{ event.image_url }}" class="w-full h-48 object-cover" alt="{{ event.title }}">
         <div class="p-5">
           <div class="flex justify-between items-center mb-3">
-            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Conference</span>
-            <span class="text-gray-500 text-sm"><i class="far fa-calendar-alt mr-1"></i> June 15, 2023</span>
+            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{{ event.event_type }}</span>
+            <span class="text-gray-500 text-sm"><i class="far fa-calendar-alt mr-1"></i> {{ event.date|date:"F d, Y" }}</span>
           </div>
-          <h3 class="text-xl font-semibold mb-2">Annual Tech Conference</h3>
-          <p class="text-gray-600 mb-4">Join us for the biggest technology event of the year featuring industry leaders and innovative workshops.</p>
+          <h3 class="text-xl font-semibold mb-2">{{ event.title }}</h3>
+          <p class="text-gray-600 mb-4">{{ event.description|truncatechars:100 }}</p>
           <div class="flex justify-between items-center">
-            <span class="text-gray-700 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> Convention Center</span>
-            <button class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-3 py-1 rounded text-sm">Details</button>
+            <span class="text-gray-700 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> {{ event.location }}</span>
+            <button onclick="showEventDetails({{ event.id }})" class="text-blue-600 hover:text-blue-800 border px-3 py-1 rounded text-sm">Details</button>
           </div>
         </div>
       </div>
-
-      <!-- Event Card 2 -->
-      <div class="relative bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md h-full">
-        <img src="https://via.placeholder.com/400x250?text=Networking" class="w-full h-48 object-cover" alt="Networking Event">
-        <div class="p-5">
-          <div class="flex justify-between items-center mb-3">
-            <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Networking</span>
-            <span class="text-gray-500 text-sm"><i class="far fa-calendar-alt mr-1"></i> June 22, 2023</span>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Summer Networking Mixer</h3>
-          <p class="text-gray-600 mb-4">Connect with professionals from various industries in a relaxed summer evening setting.</p>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-700 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> Downtown Lounge</span>
-            <button class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-3 py-1 rounded text-sm">Details</button>
-          </div>
-        </div>
+      {% empty %}
+      <div class="col-span-3 text-center py-10">
+        <p class="text-gray-500">No events found. Be the first to create one!</p>
       </div>
-
-      <!-- Event Card 3 -->
-      <div class="relative bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md h-full">
-        <div class="absolute top-3 right-3 bg-green-600 text-white text-xs px-3 py-1 rounded-full z-10">New</div>
-        <img src="https://via.placeholder.com/400x250?text=Workshop" class="w-full h-48 object-cover" alt="Workshop">
-        <div class="p-5">
-          <div class="flex justify-between items-center mb-3">
-            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Workshop</span>
-            <span class="text-gray-500 text-sm"><i class="far fa-calendar-alt mr-1"></i> July 5, 2023</span>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Digital Marketing Workshop</h3>
-          <p class="text-gray-600 mb-4">Hands-on training session covering the latest trends and tools in digital marketing.</p>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-700 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> Business Center</span>
-            <button class="text-blue-600 hover:text-blue-800 border border-blue-600 hover:border-blue-800 px-3 py-1 rounded text-sm">Details</button>
-          </div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
 
-    <!-- View More Button -->
+    <!-- Load More -->
+    {% if events|length >= 6 %}
     <div class="text-center mt-10">
-      <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">View All Events</button>
+      <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">Load More Events</button>
     </div>
+    {% endif %}
 
-    <!-- Newsletter Section -->
-    <div class="mt-12">
-      <div class="max-w-4xl mx-auto bg-gray-100 border-0 rounded-xl p-8 text-center">
-        <h3 class="text-2xl font-semibold mb-3">Stay Updated on Upcoming Events</h3>
-        <p class="text-gray-600 mb-6">Subscribe to our newsletter and never miss an important event</p>
-        <div class="max-w-md mx-auto flex">
-          <input type="email" placeholder="Your email address" class="flex-grow px-4 py-2 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-r-lg">Subscribe</button>
+    <!-- Event Details Modal -->
+    <div id="eventDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 id="modalEventTitle" class="text-2xl font-semibold">Loading...</h3>
+          <button onclick="closeEventDetailsModal()" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
         </div>
-        <p class="text-gray-500 text-sm mt-4">We respect your privacy. Unsubscribe at any time.</p>
+        <div id="modalContent" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <img id="modalEventImage" src="" class="w-full h-64 object-cover rounded-lg" alt="Event Image">
+          </div>
+          <div>
+            <div class="flex items-center mb-4">
+              <span id="modalEventType" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-3"></span>
+              <span id="modalEventDate" class="text-gray-500 text-sm"></span>
+            </div>
+            <p id="modalEventDescription" class="text-gray-700 mb-4"></p>
+            <div class="mb-4">
+              <h4 class="font-medium text-gray-900 mb-2">Details</h4>
+              <div class="flex items-center text-gray-600 mb-1">
+                <i class="fas fa-map-marker-alt mr-2"></i>
+                <span id="modalEventLocation"></span>
+              </div>
+              <div class="flex items-center text-gray-600 mb-1">
+                <i class="fas fa-user mr-2"></i>
+                <span id="modalEventOrganizer">Organized by <span id="organizerName"></span></span>
+              </div>
+            </div>
+            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">RSVP</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Font Awesome for icons -->
+<!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
+<script>
+  function openEventModal() {
+    document.getElementById('eventModal').classList.remove('hidden');
+  }
+
+  function closeEventModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+  }
+
+  function showEventDetails(eventId) {
+    const modal = document.getElementById('eventDetailsModal');
+    const modalContent = document.getElementById('modalContent');
+    modalContent.classList.add('opacity-50');
+    document.getElementById('modalEventTitle').textContent = 'Loading...';
+
+    fetch(`/events/${eventId}/`)
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('modalEventTitle').textContent = data.title;
+        document.getElementById('modalEventType').textContent = data.type;
+        document.getElementById('modalEventDate').innerHTML = `<i class="far fa-calendar-alt mr-1"></i> ${data.date}`;
+        document.getElementById('modalEventDescription').textContent = data.description;
+        document.getElementById('modalEventLocation').textContent = data.location;
+        document.getElementById('organizerName').textContent = data.organizer;
+        document.getElementById('modalEventImage').src = data.image_url;
+
+        modalContent.classList.remove('opacity-50');
+        modal.classList.remove('hidden');
+      })
+      .catch(error => {
+        console.error('Error loading event details:', error);
+        modalContent.innerHTML = `<div class="col-span-2 text-center py-10"><p class="text-red-500">Failed to load event details.</p></div>`;
+      });
+  }
+
+  function closeEventDetailsModal() {
+    document.getElementById('eventDetailsModal').classList.add('hidden');
+  }
+
+  function filterEvents() {
+    const typeFilter = document.getElementById('filterType').value;
+    const dateFilter = document.getElementById('filterDate').value;
+    const container = document.getElementById('eventsContainer');
+
+    container.innerHTML = `<div class="col-span-3 text-center py-10"><p class="text-gray-500">Loading events...</p></div>`;
+
+    setTimeout(() => {
+      fetch(`/events/?type=${typeFilter}&date=${dateFilter}`)
+        .then(response => response.json())
+        .then(data => {
+          // Ideally: render data dynamically here
+          window.location.reload(); // fallback until dynamic rendering is implemented
+        })
+        .catch(error => {
+          console.error('Error filtering events:', error);
+          container.innerHTML = `<div class="col-span-3 text-center py-10"><p class="text-red-500">Error loading events.</p></div>`;
+        });
+    }, 500);
+  }
+</script>
 {% endblock %}

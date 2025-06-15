@@ -21,8 +21,6 @@ urlpatterns = [
     path('watch/', views.watch_view, name='watch'),
     path('memories/', views.memories_view, name='memories'),
     path('explore/', views.explore_view, name='explore'),
-    path('events/', views.events_view, name='events'),
-    path('gaming/', views.gaming_view, name='gaming'),
 
 
 
@@ -57,5 +55,13 @@ urlpatterns = [
     path('following/<str:username>/', views.following_list, name='following_list'),
     path('post/<int:post_id>/', views.post_detail, name='post_detail'),
     
+
+    # gaming URLs
+    path('gaming/', views.gaming_view, name='gaming'),
+
+
+    # events URLs
+    path('events/', views.events_view, name='events_view'),
+    path('events/<int:event_id>/',views.event_details, name='event_details'),
 
 ]
