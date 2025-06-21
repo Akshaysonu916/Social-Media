@@ -14,7 +14,7 @@ from collections import defaultdict
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 import logging
-
+from django.db.models import Count, IntegerField, ExpressionWrapper, F
 
 # Create your views here.
 
@@ -141,11 +141,6 @@ def watch_view(request):
 
 def memories_view(request):
     return render(request, 'memories.html')
-
-def explore_view(request):
-    return render(request, 'explore.html')
-
-
 
 
 # story views
@@ -616,3 +611,28 @@ def event_details(request, event_id):
         'organizer': event.creator.username
     }
     return JsonResponse(data)
+
+
+
+# explore view
+def explore_view(request):
+    now = timezone.now()
+    time_threshold = now - timedelta(hours=48)  # Last 48 hours
+
+    trending_posts = (
+        Post.objects.filter(created_at__gte=time_threshold)
+        .annotate(
+            like_count=Count('likes', distinct=True),
+            comment_count=Count('comments', distinct=True),
+            popularity_score=ExpressionWrapper(
+                Count('likes', distinct=True) + Count('comments', distinct=True),
+                output_field=IntegerField()
+            )
+        )
+        .order_by('-popularity_score', '-created_at')[:20]  # Top 20 by popularity
+    )
+
+    context = {
+        'trending_posts': trending_posts,
+    }
+    return render(request, 'explore.html', context)

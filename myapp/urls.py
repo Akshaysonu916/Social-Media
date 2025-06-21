@@ -20,7 +20,6 @@ urlpatterns = [
     path('groups/', views.groups_view, name='groups'),
     path('watch/', views.watch_view, name='watch'),
     path('memories/', views.memories_view, name='memories'),
-    path('explore/', views.explore_view, name='explore'),
 
 
 
@@ -63,5 +62,9 @@ urlpatterns = [
     # events URLs
     path('events/', views.events_view, name='events_view'),
     path('events/<int:event_id>/',views.event_details, name='event_details'),
+
+    # explore URLs
+    path('explore/', views.explore_view, name='explore'),
+
 
 ]

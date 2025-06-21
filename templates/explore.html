@@ -1,9 +1,29 @@
 {% extends "navbar.html" %}
-
+{% load static %}
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 mt-6">
-  <h1 class="text-2xl font-bold">Explore</h1>
-  <p class="text-gray-600 mt-2">Discover new ideas, posts, and content.</p>
-  <!-- Add exploration feed or ideas here -->
+  <h1 class="text-2xl font-bold">🔥 Trending Posts</h1>
+  <p class="text-gray-600 mt-2">Based on most likes and comments in the last 48 hours.</p>
+
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+    {% for post in trending_posts %}
+      <div class="bg-white rounded-lg shadow hover:shadow-lg transition duration-300">
+        <div class="relative h-48 w-full overflow-hidden rounded-t-lg">
+          <img src="{{ post.image.url }}" alt="Post image" class="w-full h-full object-cover">
+        </div>
+        <div class="p-3">
+          <p class="text-sm font-semibold text-gray-800">{{ post.user.username }}</p>
+          <p class="text-xs text-gray-600 mt-1">{{ post.caption|truncatewords:12 }}</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-red-500 font-semibold">
+            🔥 Trending
+            <span class="text-gray-700">• {{ post.like_count }} Likes</span>
+            <span class="text-gray-700">• {{ post.comment_count }} Comments</span>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-gray-500 mt-4">No trending posts right now.</p>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}
