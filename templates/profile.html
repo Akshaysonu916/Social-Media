@@ -17,8 +17,9 @@
             <h2 id="display-name" class="text-2xl font-semibold">{{ user.get_full_name|default:user.username }}</h2>
             <p id="display-bio" class="text-gray-600">{{ user.bio }}</p>
             
-            <div class="mt-4 flex gap-2">
+            <div class="mt-4 flex flex-wrap gap-2">
                 <button id="edit-profile-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Edit Profile</button>
+                <a href="{% url 'change_password' %}" class="px-4 py-2 bg-yellow-500 text-white rounded-md font-medium">Change Password</a>
                 <a href="{% url 'home' %}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Back to Home</a>
                 <a href="{% url 'logout' %}" class="px-4 py-2 bg-red-500 text-white rounded-md font-medium">Logout</a>
             </div>

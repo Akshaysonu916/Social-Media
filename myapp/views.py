@@ -18,12 +18,20 @@ from django.db.models import Count, IntegerField, ExpressionWrapper, F
 
 # Create your views here.
 
+@login_required
 def home_view(request):
     now = timezone.now()
-    stories = Story.objects.filter(created_at__gte=now - timedelta(hours=24)).select_related('user').order_by('user', '-created_at')
-    posts = Post.objects.all().order_by('-created_at')
-    post_form = PostForm()
 
+    # Get recent stories (last 24 hrs)
+    stories = Story.objects.filter(
+        created_at__gte=now - timedelta(hours=24)
+    ).select_related('user').order_by('user', '-created_at')
+
+    # Get all posts ordered by newest first
+    posts = Post.objects.all().order_by('-created_at')
+
+    # Handle post creation
+    post_form = PostForm()
     if request.method == 'POST':
         post_form = PostForm(request.POST, request.FILES)
         if post_form.is_valid():
@@ -35,19 +43,20 @@ def home_view(request):
     # Group stories by user
     story_groups = []
     user_stories_dict = defaultdict(list)
-    
-    # Group stories by user
     for story in stories:
         user_stories_dict[story.user].append(story)
-    
-    # Convert to list of tuples (user, stories_list)
     for user, user_stories in user_stories_dict.items():
         story_groups.append((user, user_stories))
 
+    # Suggest users to follow (exclude self + already followed)
+    following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+    suggestions = CustomUser.objects.exclude(id__in=following_ids).exclude(id=request.user.id).order_by('?')[:5]
+
     context = {
-        'story_groups': story_groups,  # This is what your template expects
+        'story_groups': story_groups,
         'posts': posts,
         'post_form': post_form,
+        'suggestions': suggestions,
     }
     return render(request, 'home.html', context)
 
@@ -537,6 +546,12 @@ def following_list(request, username):
         'list_type': 'Following',
     })
 
+@login_required
+def homefollow_user(request, user_id):
+    user_to_follow = get_object_or_404(CustomUser, id=user_id)
+    if user_to_follow != request.user:
+        Follow.objects.get_or_create(follower=request.user, following=user_to_follow)
+    return redirect('home')
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)

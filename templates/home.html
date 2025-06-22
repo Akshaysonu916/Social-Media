@@ -232,8 +232,29 @@
 
         <div class="bg-white rounded-lg shadow p-4">
           <h2 class="text-lg font-semibold mb-3">Suggestions</h2>
-          <p class="text-gray-500">Suggestions to follow will appear here.</p>
-        </div>
+          {% if suggestions %}
+            <ul class="space-y-3">
+            {% for u in suggestions %}
+              <li class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+            {% if u.profile_picture %}
+              <img src="{{ u.profile_picture.url }}" class="w-8 h-8 rounded-full object-cover" />
+            {% else %}
+              <img src="{% static 'default-avatar.png' %}" class="w-8 h-8 rounded-full object-cover" />
+            {% endif %}
+            <span class="text-sm font-semibold">{{ u.username }}</span>
+          </div>
+          <form method="POST" action="{% url 'homefollow_user' u.id %}">
+            {% csrf_token %}
+            <button type="submit" class="text-sm text-blue-500 hover:underline">Follow</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-gray-500">No suggestions available right now.</p>
+  {% endif %}
+</div>
       </aside>
     </div>
   </div>
