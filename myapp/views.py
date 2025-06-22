@@ -98,29 +98,53 @@ def logout_view(request):
 #     return render(request, 'home.html')
 
 
+
 @login_required
 def profile(request):
-    user = request.user
+    profile_user = request.user  # Current logged-in user
 
     if request.method == 'POST':
-        # Split full name into first and last names if provided
+        # Handle profile update
         full_name = request.POST.get('name', '')
         if full_name:
             parts = full_name.strip().split(' ', 1)
-            user.first_name = parts[0]
-            user.last_name = parts[1] if len(parts) > 1 else ''
+            profile_user.first_name = parts[0]
+            profile_user.last_name = parts[1] if len(parts) > 1 else ''
 
-        user.email = request.POST.get('email', user.email)
-        user.location = request.POST.get('location', user.location)
-        user.bio = request.POST.get('bio', user.bio)
+        profile_user.email = request.POST.get('email', profile_user.email)
+        profile_user.location = request.POST.get('location', profile_user.location)
+        profile_user.bio = request.POST.get('bio', profile_user.bio)
 
+        # ✅ Handle profile picture upload
         if 'profile_picture' in request.FILES:
-            user.profile_picture = request.FILES['profile_picture']
+            profile_user.profile_picture = request.FILES['profile_picture']
 
-        user.save()
+        # ✅ Handle cover photo upload
+        if 'cover_photo' in request.FILES:
+            profile_user.cover_photo = request.FILES['cover_photo']
+
+        # ✅ Handle Public/Private profile toggle
+        is_public = request.POST.get('is_public')
+        profile_user.is_public = True if is_public == 'on' else False
+
+        profile_user.save()
         return redirect('profile')
 
-    return render(request, 'profile.html', {'user': user})
+    # Followers and following count
+    followers_count = Follow.objects.filter(following=profile_user).count()
+    following_count = Follow.objects.filter(follower=profile_user).count()
+
+    # Recent posts (latest 6)
+    recent_posts = Post.objects.filter(user=profile_user).order_by('-created_at')[:6]
+
+    context = {
+        'profile_user': profile_user,
+        'followers_count': followers_count,
+        'following_count': following_count,
+        'recent_posts': recent_posts,
+    }
+
+    return render(request, 'profile.html', context)
 
 
 
