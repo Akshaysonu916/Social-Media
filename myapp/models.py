@@ -162,3 +162,14 @@ class Event(models.Model):
         if self.image and hasattr(self.image, 'url'):
             return self.image.url
         return 'https://via.placeholder.com/400x250?text=Event'
+    
+
+
+#profile model
+class ProfileView(models.Model):
+    viewer = models.ForeignKey(User, related_name='viewed_profiles', on_delete=models.CASCADE)
+    viewed_user = models.ForeignKey(User, related_name='profile_views', on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.viewer.username} viewed {self.viewed_user.username}"

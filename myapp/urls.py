@@ -13,7 +13,7 @@ urlpatterns = [
 
     # Home view
     path('', views.home_view, name='home'),
-    path('profile/', views.profile, name='profile'),
+    # path('profile/', views.profile, name='profile'),
     path('notifications/', views.notifications, name='notifications'),
     path('search/', views.search_view, name='search'),
     path('friends/', views.friends_view, name='friends'),
@@ -21,6 +21,12 @@ urlpatterns = [
     path('groups/', views.groups_view, name='groups'),
     path('watch/', views.watch_view, name='watch'),
     path('memories/', views.memories_view, name='memories'),
+
+
+
+    # profile URLs
+    path('profile/', views.profile, name='profile'),
+    path('profile/<str:username>/', views.profile, name='user_profile'),
 
 
 

@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 import logging
 from django.db.models import Count, IntegerField, ExpressionWrapper, F
+from django.utils.timezone import now
 
 # Create your views here.
 
@@ -100,11 +101,27 @@ def logout_view(request):
 
 
 @login_required
-def profile(request):
-    profile_user = request.user  # Current logged-in user
+def profile(request, username=None):
+    # View either own profile or someone else's
+    if username:
+        profile_user = get_object_or_404(User, username=username)
+    else:
+        profile_user = request.user
 
-    if request.method == 'POST':
-        # Handle profile update
+    # 🔍 Track profile view (avoid self-viewing and duplicate within 24h)
+    if request.user != profile_user:
+        time_threshold = now() - timedelta(hours=24)
+        already_viewed = ProfileView.objects.filter(
+            viewer=request.user,
+            viewed_user=profile_user,
+            timestamp__gte=time_threshold
+        ).exists()
+
+        if not already_viewed:
+            ProfileView.objects.create(viewer=request.user, viewed_user=profile_user)
+
+    # 🧠 Handle profile update (only if own profile)
+    if request.method == 'POST' and request.user == profile_user:
         full_name = request.POST.get('name', '')
         if full_name:
             parts = full_name.strip().split(' ', 1)
@@ -115,33 +132,37 @@ def profile(request):
         profile_user.location = request.POST.get('location', profile_user.location)
         profile_user.bio = request.POST.get('bio', profile_user.bio)
 
-        # ✅ Handle profile picture upload
         if 'profile_picture' in request.FILES:
             profile_user.profile_picture = request.FILES['profile_picture']
 
-        # ✅ Handle cover photo upload
         if 'cover_photo' in request.FILES:
             profile_user.cover_photo = request.FILES['cover_photo']
 
-        # ✅ Handle Public/Private profile toggle
         is_public = request.POST.get('is_public')
         profile_user.is_public = True if is_public == 'on' else False
 
         profile_user.save()
         return redirect('profile')
 
-    # Followers and following count
+    # 📊 Followers and following count
     followers_count = Follow.objects.filter(following=profile_user).count()
     following_count = Follow.objects.filter(follower=profile_user).count()
 
-    # Recent posts (latest 6)
+    # 🖼️ Recent posts
     recent_posts = Post.objects.filter(user=profile_user).order_by('-created_at')[:6]
+
+    # 👀 Recent profile views (last 7 days)
+    recent_views_count = ProfileView.objects.filter(
+        viewed_user=profile_user,
+        timestamp__gte=now() - timedelta(days=7)
+    ).count()
 
     context = {
         'profile_user': profile_user,
         'followers_count': followers_count,
         'following_count': following_count,
         'recent_posts': recent_posts,
+        'recent_views_count': recent_views_count,
     }
 
     return render(request, 'profile.html', context)

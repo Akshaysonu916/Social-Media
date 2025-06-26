@@ -12,7 +12,10 @@
         {% else %}
             <div class="flex items-center justify-center w-full h-full text-gray-500">No Cover Photo</div>
         {% endif %}
+
+        {% if request.user == profile_user %}
         <button id="edit-profile-btn" class="absolute top-4 right-4 px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Edit Profile</button>
+        {% endif %}
     </div>
 
     <div class="p-8">
@@ -41,6 +44,13 @@
                     {% endif %}
                 </div>
 
+                <!-- 👀 Profile Views (only show to self) -->
+                {% if request.user == profile_user %}
+                <div class="mt-2">
+                    <span class="text-blue-500 text-sm">👁️ {{ recent_views_count }} profile views in the last 7 days</span>
+                </div>
+                {% endif %}
+
                 <!-- Followers & Following -->
                 <div class="flex gap-6 mt-4">
                     <a href="{% url 'follower_list' profile_user.username %}" class="text-center hover:underline">
@@ -53,12 +63,14 @@
                     </a>
                 </div>
 
+                {% if request.user == profile_user %}
                 <!-- Action Buttons -->
                 <div class="mt-4 flex flex-wrap gap-2">
                     <a href="{% url 'change_password' %}" class="px-4 py-2 bg-yellow-500 text-white rounded-md font-medium">Change Password</a>
                     <a href="{% url 'home' %}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Back to Home</a>
                     <a href="{% url 'logout' %}" class="px-4 py-2 bg-red-500 text-white rounded-md font-medium">Logout</a>
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -82,44 +94,36 @@
             </div>
         </div>
 
-        <!-- Edit Form (hidden by default) -->
+        {% if request.user == profile_user %}
+        <!-- Edit Form (only show to owner) -->
         <div id="edit-form" class="hidden mt-8">
             <h3 class="text-xl font-semibold mb-4">Edit Profile</h3>
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-
-                <!-- Cover Photo Upload -->
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Cover Photo</div>
                     <input type="file" name="cover_photo" accept="image/*" class="border rounded p-1">
                 </div>
-
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Profile Picture</div>
                     <input type="file" name="profile_picture" accept="image/*" class="border rounded p-1">
                 </div>
-
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Name</div>
                     <input type="text" name="name" value="{{ profile_user.get_full_name|default:profile_user.username }}" class="border rounded p-1 w-64">
                 </div>
-
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Email</div>
                     <input type="email" name="email" value="{{ profile_user.email }}" class="border rounded p-1 w-64">
                 </div>
-
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Location</div>
                     <input type="text" name="location" value="{{ profile_user.location }}" class="border rounded p-1 w-64">
                 </div>
-
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Bio</div>
                     <textarea name="bio" class="border rounded p-1 w-64 h-24">{{ profile_user.bio }}</textarea>
                 </div>
-
-                <!-- Visibility -->
                 <div class="flex justify-between py-2">
                     <div class="font-medium text-gray-500">Profile Visibility</div>
                     <label class="flex items-center space-x-2">
@@ -127,13 +131,13 @@
                         <span class="text-sm">Public Profile</span>
                     </label>
                 </div>
-
                 <div class="mt-4 flex gap-2">
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Save Changes</button>
                     <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Cancel</button>
                 </div>
             </form>
         </div>
+        {% endif %}
 
         <!-- Recent Posts Section -->
         <div class="mt-10">
@@ -154,10 +158,10 @@
             <p class="text-gray-500">No posts available.</p>
             {% endif %}
         </div>
-
     </div>
 </div>
 
+{% if request.user == profile_user %}
 <script>
     const editBtn = document.getElementById('edit-profile-btn');
     const cancelBtn = document.getElementById('cancel-edit-btn');
@@ -177,4 +181,5 @@
         profileHeader.classList.remove('hidden');
     });
 </script>
+{% endif %}
 {% endblock %}
