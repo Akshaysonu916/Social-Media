@@ -168,6 +168,55 @@ def profile(request, username=None):
     return render(request, 'profile.html', context)
 
 
+@login_required
+def analytics_dashboard(request):
+    # Get all posts by the current user with annotated counts
+    posts = Post.objects.filter(user=request.user).annotate(
+        total_likes_count=Count('like_entries', distinct=True),
+        total_comments_count=Count('comments', distinct=True),
+        total_views_count=Count('views', distinct=True),
+    ).order_by('-created_at')
+
+    # Summary totals
+    total_likes = sum(post.total_likes_count for post in posts)
+    total_comments = sum(post.total_comments_count for post in posts)
+    total_views = sum(post.total_views_count for post in posts)
+
+    # Last 7 days for chart
+    today = now().date()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    labels = [day.strftime('%b %d') for day in days]
+
+    # Likes (using liked_at timestamp from Like model)
+    likes_data = [
+        Like.objects.filter(post__user=request.user, liked_at__date=day).count()
+        for day in days
+    ]
+
+    # Comments per day
+    comments_data = [
+        Comment.objects.filter(post__user=request.user, created_at__date=day).count()
+        for day in days
+    ]
+
+    # Views per day
+    views_data = [
+        PostView.objects.filter(post__user=request.user, viewed_at__date=day).count()
+        for day in days
+    ]
+
+    context = {
+        'posts': posts,
+        'total_likes': total_likes,
+        'total_comments': total_comments,
+        'total_views': total_views,
+        'labels': labels,
+        'likes_data': likes_data,
+        'comments_data': comments_data,
+        'views_data': views_data,
+    }
+
+    return render(request, 'analytics.html', context)
 
 def notifications(request):
     return render(request, 'notifications.html')
@@ -338,27 +387,25 @@ def share_story(request, story_id):
     return JsonResponse({'success': True, 'message': 'Story shared!'})
 
 
-# post views
 @login_required
 @require_POST
 def like_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     user = request.user
 
-    # Check if user already liked the post
-    liked = user in post.likes.all()
-    
-    # Toggle like status
-    if liked:
-        post.likes.remove(user)
+    # Toggle like/unlike
+    like, created = Like.objects.get_or_create(user=user, post=post)
+
+    if not created:
+        # Already liked — unlike
+        like.delete()
         liked = False
     else:
-        post.likes.add(user)
         liked = True
 
     return JsonResponse({
         'liked': liked,
-        'total_likes': post.likes.count(),
+        'total_likes': post.like_entries.count(),
         'status': 'success'
     })
 
@@ -389,6 +436,19 @@ def delete_post(request, post_id):
     if request.user == post.user:  # Ensure only the post owner can delete
         post.delete()
     return redirect('home')  # Redirect back to home after deletion
+
+
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    # Save view (avoid duplicate if same user refreshes)
+    if request.user.is_authenticated:
+        if not PostView.objects.filter(post=post, user=request.user).exists():
+            PostView.objects.create(post=post, user=request.user)
+    else:
+        PostView.objects.create(post=post, user=None)
+
+    return render(request, 'post_detail.html', {'post': post})
 
 
 # message views

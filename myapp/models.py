@@ -67,10 +67,9 @@ class Post(models.Model):
     content = models.TextField(max_length=500)
     image = models.ImageField(upload_to='post_images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    likes = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='liked_posts', blank=True)
 
     def total_likes(self):
-        return self.likes.count()
+        return self.like_entries.count()
 
     def total_comments(self):
         return self.comments.count()
@@ -86,6 +85,29 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.user.username} on Post {self.post.id} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class PostView(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='views')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} viewed Post {self.post.id} on {self.viewed_at}"
+    
+
+
+class Like(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='like_entries')
+    liked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')  # Prevent duplicate likes
+        ordering = ['-liked_at']
+
+    def __str__(self):
+        return f"{self.user.username} liked Post {self.post.id} at {self.liked_at}"
 
 
 # chat model
