@@ -16,6 +16,8 @@ from django.core.paginator import Paginator
 import logging
 from django.db.models import Count, IntegerField, ExpressionWrapper, F
 from django.utils.timezone import now
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 # Create your views here.
 
@@ -498,31 +500,36 @@ def messages_view(request):
 def chat_detail(request, conversation_id):
     current_user = request.user
 
-    # Fetch the conversation with the given ID that includes the current user
+    # 1. Get the active conversation
     conversation = get_object_or_404(Conversation, id=conversation_id, participants=current_user)
 
-    # Fetch all conversations involving current user, ordered by most recently updated
+    # 2. Get all user’s conversations (for sidebar)
     conversations = Conversation.objects.filter(participants=current_user).order_by('-updated_at')
 
-    # Map other participant's user ID to their conversation object for quick lookup in the sidebar
+    # 3. Map other participants for sidebar quick access
     conversation_partners = {}
     for convo in conversations:
         other_user = convo.get_other_participant(current_user)
         if other_user:
             conversation_partners[other_user.id] = convo
 
-    # Get all users except the current user (for the sidebar user list)
+    # 4. Get all users (for sidebar list)
     all_users = User.objects.exclude(id=current_user.id)
 
-    # Get the other participant in the active conversation (for chat header display)
+    # 5. Get the other user in this active conversation
     active_other_user = conversation.get_other_participant(current_user)
 
+    # ✅ 6. Get messages that are NOT deleted for this user and not deleted for everyone
+    messages = conversation.messages.exclude(deleted_for=current_user).filter(deleted_for_everyone=False).order_by('timestamp')
+
+    # 7. Prepare context
     context = {
         'all_users': all_users,
         'conversations': conversations,
         'active_conversation': conversation,
         'conversation_partners': conversation_partners,
         'active_other_user': active_other_user,
+        'messages': messages,  # ✅ Properly filtered messages
     }
 
     return render(request, 'messages.html', context)
@@ -560,6 +567,74 @@ def start_conversation(request, user_id):
 
     return redirect('chat_detail', conversation_id=conversation.id)
 
+
+User = get_user_model()
+
+def profile_preview(request, user_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    # Example mutual followers logic (optional)
+    mutuals = User.objects.filter(
+        followers__in=[request.user],
+        following__in=[target_user]
+    ).exclude(id=request.user.id)[:3]
+
+    data = {
+        'username': target_user.username,
+        'full_name': f"{target_user.first_name} {target_user.last_name}",
+        'bio': target_user.bio,
+        'location': target_user.location,
+        'profile_picture': target_user.profile_picture.url if target_user.profile_picture else '/static/images/default-profile.png',
+        'mutuals': [u.username for u in mutuals],
+    }
+    return JsonResponse(data)
+
+
+
+@require_POST
+@login_required
+def delete_message(request, message_id, delete_type):
+    message = get_object_or_404(Message, id=message_id)
+
+    if delete_type == 'me':
+        message.deleted_for.add(request.user)
+        return JsonResponse({'success': True})
+
+    elif delete_type == 'everyone':
+        if message.sender != request.user:
+            return JsonResponse({'error': 'Not authorized'}, status=403)
+        if not message.can_delete_for_everyone():
+            return JsonResponse({'error': 'Time limit exceeded'}, status=403)
+        
+        message.deleted_for_everyone = True
+        message.save()
+
+        # ✅ Broadcast the deletion to all WebSocket clients in the conversation
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"chat_{message.conversation.id}",
+            {
+                "type": "delete_message",
+                "message_id": message.id
+            }
+        )
+
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'error': 'Invalid delete type'}, status=400)
+
+def broadcast_message_deletion(message_id, conversation_id):
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"chat_{conversation_id}",
+        {
+            "type": "delete_message",
+            "message_id": message_id,
+        }
+    )
 
 
 # userlist view

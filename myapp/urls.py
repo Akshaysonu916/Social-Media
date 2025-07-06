@@ -52,7 +52,8 @@ urlpatterns = [
     path('start-conversation/<int:user_id>/', views.start_conversation, name='start_conversation'),
     path('messages/<int:conversation_id>/', views.chat_detail, name='chat_detail'),
     path('messages/<int:conversation_id>/send/', views.send_message, name='send_message'),
-
+    path('ajax/profile-preview/<int:user_id>/', views.profile_preview, name='profile_preview'),
+    path('delete-message/<int:message_id>/<str:delete_type>/', views.delete_message, name='delete_message'),
 
     # userlist URLs
     path('users/', views.users_list, name='users_list'),

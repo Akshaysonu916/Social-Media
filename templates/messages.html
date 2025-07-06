@@ -5,176 +5,309 @@
 {% block title %}Messages - SocialApp{% endblock %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.2/dist/index.umd.min.js"></script>
+
+<style>
+.typing-dots .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #6B7280;
+    animation: bounce 1.2s infinite ease-in-out;
+    display: inline-block;
+}
+.typing-dots .dot:nth-child(1) { animation-delay: 0s; }
+.typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
+    40% { transform: scale(1.2); opacity: 1; }
+}
+.profile-tooltip {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50px;
+    z-index: 50;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    width: 250px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.user-item:hover .profile-tooltip {
+    display: block;
+}
+</style>
+
 <div class="min-h-screen bg-gray-100">
     <div class="flex h-[calc(100vh-70px)] bg-white rounded-lg shadow-sm">
-        <!-- Left sidebar -->
+        <!-- Sidebar -->
         <aside class="w-[350px] border-r border-gray-200 overflow-y-auto">
-            <div class="flex justify-between items-center p-4 border-b border-gray-200">
+            <div class="p-4 border-b border-gray-200">
                 <h2 class="text-xl font-semibold">Messages</h2>
             </div>
-
             <div class="relative p-3">
-                <i class="fas fa-search absolute left-6 top-6 text-gray-500 pointer-events-none"></i>
-                <input
-                    type="search"
-                    placeholder="Search..."
-                    class="w-full pl-8 pr-3 py-2 rounded-full border border-gray-300 bg-gray-100"
-                    id="search-users"
-                >
+                <input type="search" placeholder="Search..." id="search-users"
+                       class="w-full pl-8 pr-3 py-2 rounded-full border border-gray-300 bg-gray-100">
+                <i class="fas fa-search absolute left-6 top-6 text-gray-500"></i>
             </div>
-
-            <!-- Users list -->
-            <nav class="py-1" id="users-list">
+            <nav id="users-list">
                 {% for user in all_users %}
                     {% if user != request.user %}
                         {% with convo=conversation_partners|dict_key:user.id %}
                         <a href="{% if convo %}{% url 'chat_detail' convo.id %}{% else %}{% url 'start_conversation' user.id %}{% endif %}"
-                           class="block hover:bg-gray-100 user-item">
-                            <div class="flex p-3">
-                                <div class="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
+                           class="block hover:bg-gray-100 user-item relative">
+                            <div class="flex p-3 items-start">
+                                <div class="relative w-12 h-12 rounded-full overflow-hidden mr-3">
                                     <img src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
-                                         alt="{{ user.username }}'s profile"
                                          class="w-full h-full object-cover">
                                 </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-center">
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
                                         <span class="font-semibold truncate username">{{ user.username }}</span>
                                         {% if convo and convo.last_message %}
-                                            <time class="text-xs text-gray-500" datetime="{{ convo.last_message.timestamp|date:'c' }}">
+                                            <time class="text-xs text-gray-500">
                                                 {{ convo.last_message.timestamp|timesince }} ago
                                             </time>
                                         {% endif %}
                                     </div>
                                     {% if convo and convo.last_message %}
-                                        <p class="text-sm text-gray-500 truncate mt-1">
+                                        <p class="text-sm text-gray-500 truncate">
                                             {{ convo.last_message.content|truncatechars:30 }}
                                         </p>
                                     {% else %}
-                                        <p class="text-sm text-gray-400 mt-1">Start a chat</p>
+                                        <p class="text-sm text-gray-400">Start a chat</p>
                                     {% endif %}
+                                </div>
+                            </div>
+                            <div class="profile-tooltip">
+                                <div class="flex items-center space-x-3">
+                                    <img src="{{ user.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                                         class="w-12 h-12 rounded-full object-cover">
+                                    <div>
+                                        <div class="font-semibold">{{ user.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ user.bio|default:'No bio yet.' }}</div>
+                                        <div class="text-xs text-gray-400 mt-1">Location: {{ user.location|default:'-' }}</div>
+                                    </div>
                                 </div>
                             </div>
                         </a>
                         {% endwith %}
                     {% endif %}
                 {% empty %}
-                    <div class="px-4 py-2 text-gray-500">No users available</div>
+                <div class="px-4 py-2 text-gray-500">No users available</div>
                 {% endfor %}
             </nav>
         </aside>
 
-        <!-- Right chat section -->
+        <!-- Main Chat Area -->
         <section class="flex-1 flex flex-col">
             {% if active_conversation %}
-                <header class="p-4 border-b border-gray-200 flex items-center">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
-                            <img src="{{ active_other_user.profile_picture.url|default:'/static/images/default-profile.png' }}"
-                                 alt="{{ active_other_user.username }}'s profile"
-                                 class="w-full h-full object-cover">
-                        </div>
-                        <h3 class="font-semibold text-lg">{{ active_other_user.username }}</h3>
+            <header class="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full overflow-hidden mr-3">
+                        <img src="{{ active_other_user.profile_picture.url|default:'/static/images/default-profile.png' }}"
+                             class="w-full h-full object-cover">
                     </div>
-                </header>
+                    <div>
+                        <h3 class="font-semibold text-lg">{{ active_other_user.username }}</h3>
+                        <span id="user-status" class="text-xs text-gray-500">⚫ Offline</span>
+                    </div>
+                </div>
+            </header>
 
-                <main id="messages-container" class="flex-1 p-5 overflow-y-auto bg-gray-50">
-                    {% for message in active_conversation.messages.all %}
-                        <article class="max-w-[60%] p-3 rounded-2xl mb-4 break-words
-                            {% if message.sender == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-200 text-gray-900 mr-auto{% endif %}">
-                            <p>{{ message.content }}</p>
-                            <time class="text-xs block text-right mt-1 opacity-80" datetime="{{ message.timestamp|date:'c' }}">
-                                {{ message.timestamp|time }}
-                            </time>
-                        </article>
-                    {% empty %}
-                        <p class="text-center text-gray-500 mt-10">No messages yet. Say hi!</p>
-                    {% endfor %}
-                </main>
+            <main id="messages-container" class="flex-1 p-5 overflow-y-auto bg-gray-50">
+                {% for message in messages %}
+                <article data-message-id="{{ message.id }}"
+                    class="relative group max-w-[60%] p-3 rounded-2xl mb-4 break-words
+                    {% if message.sender == request.user %}bg-blue-500 text-white ml-auto{% else %}bg-gray-200 text-gray-900 mr-auto{% endif %}">
+                    <p>{{ message.content }}</p>
+                    <div class="flex justify-end items-center mt-1 text-xs opacity-80">
+                        <time class="block">{{ message.timestamp|time }}</time>
+                    </div>
 
-                <form id="chat-form" class="flex p-4 border-t border-gray-200" autocomplete="off">
-                    {% csrf_token %}
-                    <input id="chat-message-input"
-                           type="text"
-                           placeholder="Type a message..."
-                           class="flex-1 px-4 py-2 rounded-full border border-gray-300 mr-3"
-                           required>
-                    <button id="chat-message-submit"
-                            type="submit"
-                            class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </form>
+                    {% if message.sender == request.user %}
+                    <div class="absolute top-1 right-2 hidden group-hover:block">
+                        <button class="text-white text-sm more-btn">⋮</button>
+                        <div class="hidden bg-white text-black rounded shadow-md mt-1 absolute right-0 z-10 dropdown-menu">
+                            <button class="block w-full px-3 py-1 text-left hover:bg-gray-200 delete-for-me">Delete for Me</button>
+                            <button class="block w-full px-3 py-1 text-left hover:bg-gray-200 delete-for-everyone">Delete for Everyone</button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </article>
+                {% empty %}
+                <p class="text-center text-gray-500 mt-10">No messages yet. Say hi!</p>
+                {% endfor %}
+            </main>
 
-                <script>
-                    (() => {
-                        const conversationId = Number("{{ active_conversation.id }}");
-                        const userId = Number("{{ request.user.id }}");
+            <div id="typing-indicator" class="px-5 py-2 text-sm text-gray-600 hidden flex items-center gap-2">
+                <span>{{ active_other_user.username }} is typing</span>
+                <div class="typing-dots flex gap-1">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
 
-                        const chatSocket = new WebSocket(
-                            (window.location.protocol === "https:" ? "wss://" : "ws://") +
-                            window.location.host + '/ws/chat/' + conversationId + '/'
-                        );
+            <form id="chat-form" class="flex p-4 border-t border-gray-200 items-center" autocomplete="off">
+                {% csrf_token %}
+                <button type="button" id="emoji-button" class="text-xl mr-2">😊</button>
+                <div class="relative">
+                    <button type="button" id="hairpin-toggle" class="text-xl"><i class="fas fa-paperclip rotate-90 text-gray-600"></i></button>
+                </div>
+                <input id="chat-message-input" type="text" placeholder="Type a message..."
+                       class="flex-1 px-4 py-2 rounded-full border border-gray-300 mr-3" required>
+                <button type="submit" id="chat-message-submit"
+                        class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
 
-                        const messagesContainer = document.querySelector('#messages-container');
-                        const inputField = document.getElementById('chat-message-input');
-                        const form = document.getElementById('chat-form');
+            <script>
+                (() => {
+                    const userId = Number("{{ request.user.id }}");
+                    const otherUserId = Number("{{ active_other_user.id }}");
+                    const conversationId = Number("{{ active_conversation.id }}");
 
-                        function scrollToBottom() {
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    const chatSocket = new WebSocket(
+                        (window.location.protocol === "https:" ? "wss://" : "ws://") +
+                        window.location.host + '/ws/chat/' + conversationId + '/'
+                    );
+
+                    const input = document.getElementById('chat-message-input');
+                    const form = document.getElementById('chat-form');
+                    const messages = document.getElementById('messages-container');
+                    const typing = document.getElementById('typing-indicator');
+                    const userStatus = document.getElementById('user-status');
+
+                    function scrollToBottom() {
+                        messages.scrollTop = messages.scrollHeight;
+                    }
+                    scrollToBottom();
+
+                    let typingTimer;
+                    input.addEventListener("input", () => {
+                        clearTimeout(typingTimer);
+                        chatSocket.send(JSON.stringify({ 'typing': true }));
+                        typingTimer = setTimeout(() => {
+                            chatSocket.send(JSON.stringify({ 'typing': false }));
+                        }, 1000);
+                    });
+
+                    chatSocket.onmessage = function(e) {
+                        const data = JSON.parse(e.data);
+
+                        if (data.message) {
+                            const article = document.createElement('article');
+                            article.className = "max-w-[60%] p-3 rounded-2xl mb-4 break-words " +
+                                (Number(data.sender_id) === userId
+                                    ? "bg-blue-500 text-white ml-auto"
+                                    : "bg-gray-200 text-gray-900 mr-auto");
+                            article.innerHTML = `
+                                <p>${data.message}</p>
+                                <div class="flex justify-end items-center mt-1 text-xs opacity-80">
+                                    <time>${data.timestamp}</time>
+                                </div>
+                            `;
+                            messages.appendChild(article);
+                            scrollToBottom();
                         }
 
-                        scrollToBottom();
+                        if (data.typing !== undefined && Number(data.sender_id) === otherUserId) {
+                            typing.classList.toggle("hidden", !data.typing);
+                        }
 
-                        chatSocket.onmessage = function(e) {
-                            const data = JSON.parse(e.data);
-                            const message = data.message;
-                            const senderId = Number(data.sender_id);
+                        if (data.status && Number(data.user_id) === otherUserId) {
+                            userStatus.textContent = data.status === "online" ? "🟢 Online" : "⚫ Offline";
+                        }
+                    };
 
-                            const article = document.createElement('article');
-                            article.classList.add('max-w-[60%]', 'p-3', 'rounded-2xl', 'mb-4', 'break-words');
+                    chatSocket.onclose = () => console.error('Socket closed unexpectedly');
 
-                            if (senderId === userId) {
-                                article.classList.add('bg-blue-500', 'text-white', 'ml-auto');
-                            } else {
-                                article.classList.add('bg-gray-200', 'text-gray-900', 'mr-auto');
-                            }
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const message = input.value.trim();
+                        if (message) {
+                            chatSocket.send(JSON.stringify({ 'message': message }));
+                            input.value = '';
+                        }
+                    });
 
-                            article.innerHTML = `
-                                <p>${message}</p>
-                                <time class="text-xs block text-right mt-1 opacity-80">${new Date().toLocaleTimeString()}</time>
-                            `;
-
-                            messagesContainer.appendChild(article);
-                            scrollToBottom();
-                        };
-
-                        chatSocket.onclose = function() {
-                            console.error('Chat socket closed unexpectedly');
-                        };
-
-                        form.addEventListener('submit', function(e) {
+                    input.addEventListener('keyup', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            const message = inputField.value.trim();
-                            if (message !== '') {
-                                chatSocket.send(JSON.stringify({ 'message': message }));
-                                inputField.value = '';
-                            }
-                        });
+                            form.dispatchEvent(new Event('submit'));
+                        }
+                    });
 
-                        inputField.addEventListener('keyup', function(e) {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                form.dispatchEvent(new Event('submit'));
-                            }
+                    const emojiBtn = document.querySelector('#emoji-button');
+                    const picker = new window.EmojiButton();
+                    picker.on('emoji', emoji => {
+                        const start = input.selectionStart;
+                        const end = input.selectionEnd;
+                        input.value = input.value.substring(0, start) + emoji + input.value.substring(end);
+                        input.focus();
+                        input.selectionStart = input.selectionEnd = start + emoji.length;
+                    });
+                    emojiBtn.addEventListener('click', () => {
+                        picker.togglePicker(emojiBtn);
+                    });
+                })();
+            </script>
+
+            <script>
+                function getCSRFToken() {
+                    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+                }
+
+                document.addEventListener("click", (e) => {
+                    if (e.target.classList.contains("more-btn")) {
+                        const menu = e.target.nextElementSibling;
+                        document.querySelectorAll(".dropdown-menu").forEach(m => {
+                            if (m !== menu) m.classList.add("hidden");
                         });
-                    })();
-                </script>
+                        menu.classList.toggle("hidden");
+                        e.stopPropagation();
+                    } else {
+                        document.querySelectorAll(".dropdown-menu").forEach(m => m.classList.add("hidden"));
+                    }
+                });
+
+                document.addEventListener("click", function(e) {
+                    if (e.target.classList.contains("delete-for-me") || e.target.classList.contains("delete-for-everyone")) {
+                        const article = e.target.closest("article[data-message-id]");
+                        const messageId = article.dataset.messageId;
+                        const deleteType = e.target.classList.contains("delete-for-me") ? "me" : "everyone";
+
+                        fetch(`/delete-message/${messageId}/${deleteType}/`, {
+                            method: "POST",
+                            headers: {
+                                "X-CSRFToken": getCSRFToken(),
+                                "Content-Type": "application/json"
+                            }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                article.remove();
+                            } else {
+                                alert(data.error || "Failed to delete message");
+                            }
+                        })
+                        .catch(err => console.error("Delete failed", err));
+                    }
+                });
+            </script>
+
             {% else %}
-                <div class="flex flex-col items-center justify-center h-full text-gray-500">
-                    <i class="fas fa-comment-dots text-5xl mb-4 opacity-50"></i>
-                    <h3 class="text-xl font-semibold mb-1">Select a user</h3>
-                    <p>Start a conversation by clicking on a user</p>
-                </div>
+            <div class="flex flex-col items-center justify-center h-full text-gray-500">
+                <i class="fas fa-comment-dots text-5xl mb-4 opacity-50"></i>
+                <h3 class="text-xl font-semibold mb-1">Select a user</h3>
+                <p>Start a conversation by clicking on a user</p>
+            </div>
             {% endif %}
         </section>
     </div>
@@ -187,10 +320,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     searchInput.addEventListener("input", function () {
         const query = this.value.toLowerCase();
-
         userItems.forEach(item => {
-            const usernameSpan = item.querySelector(".username");
-            const username = usernameSpan?.textContent?.toLowerCase() || "";
+            const username = item.querySelector(".username")?.textContent?.toLowerCase() || "";
             item.style.display = username.includes(query) ? "block" : "none";
         });
     });

@@ -3,6 +3,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 # Create your models here.
 
@@ -139,9 +141,14 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
+    deleted_for = models.ManyToManyField(User, related_name='deleted_messages', blank=True)
+    deleted_for_everyone = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.sender.username}: {self.content[:20]}"
+    
+    def can_delete_for_everyone(self):
+        return timezone.now() - self.timestamp <= timedelta(minutes=10)
     
 
 
