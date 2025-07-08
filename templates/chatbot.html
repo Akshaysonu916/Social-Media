@@ -1,0 +1,32 @@
+{% comment %} <div id="chatbox" class="fixed bottom-4 right-4 w-80 bg-white border rounded shadow-lg p-3 z-50">
+  <h3 class="text-lg font-bold mb-2">🤖 Chatbot</h3>
+  <div id="chat-log" class="h-40 overflow-y-auto text-sm mb-2 bg-gray-100 p-2 rounded"></div>
+  <input type="text" id="chat-input" class="w-full border px-2 py-1 rounded mb-1" placeholder="Ask a question..." />
+  <button onclick="sendMessage()" class="bg-blue-500 text-white px-3 py-1 rounded">Send</button>
+</div>
+
+<script>
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  const log = document.getElementById('chat-log');
+  log.innerHTML += `<p><b>You:</b> ${message}</p>`;
+  input.value = '';
+
+  fetch('/api/chatbot/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}',
+    },
+    body: JSON.stringify({ message: message }),
+  })
+  .then(res => res.json())
+  .then(data => {
+    log.innerHTML += `<p><b>Bot:</b> ${data.reply}</p>`;
+    log.scrollTop = log.scrollHeight;
+  });
+}
+</script> {% endcomment %}

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 
     # my apps
     'myapp',
+    'chatbot',
     'crispy_forms',  # For crispy forms
     'crispy_bootstrap4',  # For Bootstrap 4 support in crispy forms
 ]
