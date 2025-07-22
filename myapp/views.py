@@ -817,14 +817,14 @@ def explore_view(request):
     trending_posts = (
         Post.objects.filter(created_at__gte=time_threshold)
         .annotate(
-            like_count=Count('likes', distinct=True),
+            like_count=Count('like_entries', distinct=True),
             comment_count=Count('comments', distinct=True),
             popularity_score=ExpressionWrapper(
-                Count('likes', distinct=True) + Count('comments', distinct=True),
+                Count('like_entries', distinct=True) + Count('comments', distinct=True),
                 output_field=IntegerField()
             )
         )
-        .order_by('-popularity_score', '-created_at')[:20]  # Top 20 by popularity
+        .order_by('-popularity_score', '-created_at')[:20]
     )
 
     context = {

@@ -393,6 +393,9 @@
 <div id="chatbot-box">
     <div id="chatbot-header">🤖 Chatbot Assistant</div>
     <div id="chatbot-log">
+        {% for msg in previous_messages %}
+            <p><strong>{% if msg.is_bot %}Bot{% else %}You{% endif %}:</strong> {{ msg.message }}</p>
+        {% endfor %}
         <div id="bot-typing" class="hidden flex gap-1 items-center text-gray-500 mt-2 text-sm">
     <span>🤖 is typing</span>
     <div class="flex gap-1">
