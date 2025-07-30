@@ -102,4 +102,13 @@ urlpatterns = [
     ), name='password_reset_complete'),
 
 
+
+    # admin URLs
+    path('admin_users/', views.admin_user_list, name='admin_user_list'),
+    path('admin_users/<int:user_id>/', views.admin_user_detail, name='admin_user_detail'),
+    path('admin_users/<int:user_id>/delete/', views.admin_user_delete, name='admin_user_delete'),
+    path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin_users/<int:user_id>/profile/', views.admin_user_profile, name='admin_user_profile'),
+
+
 ]

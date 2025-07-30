@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # my apps
     'myapp',
     'chatbot',
+    'analytics',
     'crispy_forms',  # For crispy forms
     'crispy_bootstrap4',  # For Bootstrap 4 support in crispy forms
 ]
@@ -57,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'analytics.middleware.TrackUserActivityMiddleware',  # Custom middleware to track user activity
 ]
 
 ROOT_URLCONF = 'socialmedia.urls'

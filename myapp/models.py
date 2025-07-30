@@ -9,6 +9,7 @@ from datetime import timedelta
 # Create your models here.
 
 
+
 class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', default='default.jpg')
@@ -17,6 +18,18 @@ class CustomUser(AbstractUser):
     birth_date = models.DateField(null=True, blank=True)
     is_public = models.BooleanField(default=True)
     cover_photo = models.ImageField(upload_to='cover_photos/', blank=True, null=True)
+
+    # 🔐 Admin panel related fields
+    is_suspended = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+
+    # Optional: Add a role field for more flexibility (admin/mod/user)
+    ROLE_CHOICES = (
+        ('user', 'User'),
+        ('moderator', 'Moderator'),
+        ('admin', 'Admin'),
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
     def __str__(self):
         return self.username

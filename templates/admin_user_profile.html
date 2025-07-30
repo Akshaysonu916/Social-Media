@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-lg">
+    <div class="flex flex-col md:flex-row gap-8">
+        <!-- Profile Picture Section -->
+        <div class="flex-shrink-0">
+            <div class="w-40 h-40 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center shadow-md">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}" class="w-full h-full rounded-full object-cover">
+                {% else %}
+                    <span class="text-5xl font-bold text-gray-500">{{ user.username|first|upper }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Profile Details Section -->
+        <div class="flex-grow">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-3xl font-bold text-gray-800">{{ user.username }}</h2>
+                <span class="px-3 py-1 rounded-full text-sm font-medium 
+                    {% if user.is_suspended %}bg-red-100 text-red-800
+                    {% elif user.is_verified %}bg-green-100 text-green-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {% if user.is_suspended %}Suspended
+                    {% elif user.is_verified %}Verified
+                    {% else %}Member{% endif %}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Email</p>
+                    <p class="font-medium text-gray-800">{{ user.email }}</p>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Joined</p>
+                    <p class="font-medium text-gray-800">{{ user.date_joined|date:"F j, Y" }}</p>
+                </div>
+                
+                {% if user.location %}
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Location</p>
+                    <p class="font-medium text-gray-800">{{ user.location }}</p>
+                </div>
+                {% endif %}
+                
+                {% if user.bio %}
+                <div class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+                    <p class="text-sm text-gray-500 mb-1">About</p>
+                    <p class="font-medium text-gray-800">{{ user.bio }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-6">
+                <a href="{% url 'admin_user_list' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back to User List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+    
+</body>
+</html>

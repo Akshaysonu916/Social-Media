@@ -18,6 +18,9 @@ from django.db.models import Count, IntegerField, ExpressionWrapper, F
 from django.utils.timezone import now
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from django.contrib.auth.decorators import user_passes_test
+from django.db.models.functions import TruncDay, TruncHour
+from analytics.models import UserActivity
 
 # Create your views here.
 
@@ -84,12 +87,19 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home')  # or your desired redirect
+            
+            # 🔐 Redirect admin to admin dashboard, others to home
+            if user.is_superuser:
+                return redirect('admin_dashboard')  # name of the dashboard view
+            else:
+                return redirect('home')  # your normal user homepage
         else:
             messages.error(request, "Invalid username or password.")
     else:
         form = CustomLoginForm()
     return render(request, 'login.html', {'form': form})
+
+
 
 def logout_view(request):
     logout(request)
@@ -831,3 +841,101 @@ def explore_view(request):
         'trending_posts': trending_posts,
     }
     return render(request, 'explore.html', context)
+
+
+
+# admin views
+
+
+def is_admin(user):
+    return user.is_superuser  # Or user.is_admin if you defined a custom flag
+
+@user_passes_test(is_admin)
+def admin_user_list(request):
+    users = User.objects.filter(is_superuser=False, is_staff=False) 
+    return render(request, 'admin_user_list.html', {'users': users})
+
+@user_passes_test(is_admin)
+def admin_user_detail(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == 'POST':
+        user.is_verified = 'is_verified' in request.POST
+        user.is_suspended = 'is_suspended' in request.POST
+        user.save()
+        messages.success(request, 'User updated successfully.')
+        return redirect('admin_user_detail', user_id=user.id)
+    return render(request, 'admin_user_detail.html', {'user': user})
+
+@user_passes_test(is_admin)
+def admin_user_delete(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    user.delete()
+    messages.success(request, 'User deleted successfully.')
+    return redirect('admin_user_list')
+
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    today = now().date()
+
+    # === 📊 USER STATISTICS ===
+    total_users = CustomUser.objects.count()
+    active_users = CustomUser.objects.filter(is_active=True).count()
+    suspended_users = CustomUser.objects.filter(is_suspended=True).count()
+    verified_users = CustomUser.objects.filter(is_verified=True).count()
+    weekly_active_users = CustomUser.objects.filter(last_login__gte=today - timedelta(days=7)).count()
+    monthly_active_users = CustomUser.objects.filter(last_login__gte=today - timedelta(days=30)).count()
+
+    # === 📈 SIGNUP GROWTH CHART ===
+    signups = (
+        CustomUser.objects.annotate(day=TruncDay('date_joined'))
+        .values('day')
+        .annotate(count=Count('id'))
+        .order_by('day')
+    )
+
+    # === ❤️ MOST LIKED POSTS ===
+    top_liked = (
+        Post.objects.annotate(like_count=Count('like_entries'))  # Replace 'like_entries' with your Like model related_name
+        .order_by('-like_count')[:5]
+    )
+
+    # === 💬 MOST COMMENTED POSTS ===
+    top_commented = (
+        Post.objects.annotate(comment_count=Count('comments'))  # Replace 'comments' with your Comment model related_name
+        .order_by('-comment_count')[:5]
+    )
+
+    # === 🚀 TOP ACTIVE USERS === (based on post count)
+    top_users = (
+        CustomUser.objects.annotate(post_count=Count('posts'))  # 'posts' = related_name in Post model
+        .order_by('-post_count')[:5]
+    )
+
+    # === 🕒 HOURLY USER ACTIVITY HEATMAP ===
+    hourly_activity = (
+        UserActivity.objects.annotate(hour=TruncHour('last_active'))
+        .values('hour')
+        .annotate(count=Count('id'))
+        .order_by('hour')
+    )
+
+    # === FINAL CONTEXT ===
+    context = {
+        'total_users': total_users,
+        'active_users': active_users,
+        'suspended_users': suspended_users,
+        'verified_users': verified_users,
+        'weekly_active_users': weekly_active_users,
+        'monthly_active_users': monthly_active_users,
+        'signups': list(signups),
+        'top_liked': top_liked,
+        'top_commented': top_commented,
+        'top_users': top_users,
+        'hourly_activity': list(hourly_activity),
+    }
+
+    return render(request, 'admin_dashboard.html', context)
+
+def admin_user_profile(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    return render(request, 'admin_user_profile.html', {'user': user})
