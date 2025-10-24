@@ -97,8 +97,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -153,3 +151,19 @@ LOGIN_REDIRECT_URL = '/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'webmaster@yourdomain.com'
+
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Your Gmail email address
+EMAIL_HOST_USER = 'akshayaneesh2005@gmail.com'
+
+# Your Gmail App Password (not your regular Gmail password)
+EMAIL_HOST_PASSWORD = 'krtf magw xulk kdzh'
+
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

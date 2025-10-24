@@ -21,6 +21,7 @@ from asgiref.sync import async_to_sync
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models.functions import TruncDay, TruncHour
 from analytics.models import UserActivity
+from myapp.utils import send_user_notification_email 
 
 # Create your views here.
 
@@ -181,7 +182,7 @@ def profile(request, username=None):
 
 
 @login_required
-def analytics_dashboard(request):
+def user_dashboard(request):   # renamed from analytics_dashboard
     # Get all posts by the current user with annotated counts
     posts = Post.objects.filter(user=request.user).annotate(
         total_likes_count=Count('like_entries', distinct=True),
@@ -199,19 +200,16 @@ def analytics_dashboard(request):
     days = [today - timedelta(days=i) for i in range(6, -1, -1)]
     labels = [day.strftime('%b %d') for day in days]
 
-    # Likes (using liked_at timestamp from Like model)
     likes_data = [
         Like.objects.filter(post__user=request.user, liked_at__date=day).count()
         for day in days
     ]
 
-    # Comments per day
     comments_data = [
         Comment.objects.filter(post__user=request.user, created_at__date=day).count()
         for day in days
     ]
 
-    # Views per day
     views_data = [
         PostView.objects.filter(post__user=request.user, viewed_at__date=day).count()
         for day in days
@@ -858,13 +856,43 @@ def admin_user_list(request):
 @user_passes_test(is_admin)
 def admin_user_detail(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
+
     if request.method == 'POST':
-        user.is_verified = 'is_verified' in request.POST
-        user.is_suspended = 'is_suspended' in request.POST
+        # Checkbox values from form
+        is_verified = 'is_verified' in request.POST
+        is_suspended = 'is_suspended' in request.POST
+
+        # Detect changes
+        was_verified = user.is_verified
+        was_suspended = user.is_suspended
+
+        # Update user
+        user.is_verified = is_verified
+        user.is_suspended = is_suspended
+        user.is_active = not is_suspended  # Optional: disable login if suspended
         user.save()
+
+        # === 📧 Email Notifications ===
+        if not was_verified and is_verified:
+            subject = "✅ Account Verified"
+            message = f"Hi {user.username},\n\nYour account has been verified on Hirenix. Enjoy full access!"
+            send_user_notification_email(subject, message, user.email)
+
+        if not was_suspended and is_suspended:
+            subject = "⚠️ Account Suspended"
+            message = f"Hi {user.username},\n\nYour account has been suspended due to a policy violation. Contact support for appeal."
+            send_user_notification_email(subject, message, user.email)
+
+        if was_suspended and not is_suspended:
+            subject = "✅ Account Re-Activated"
+            message = f"Hi {user.username},\n\nYour account has been re-activated. Please follow community guidelines going forward."
+            send_user_notification_email(subject, message, user.email)
+
         messages.success(request, 'User updated successfully.')
         return redirect('admin_user_detail', user_id=user.id)
+
     return render(request, 'admin_user_detail.html', {'user': user})
+
 
 @user_passes_test(is_admin)
 def admin_user_delete(request, user_id):
@@ -876,6 +904,32 @@ def admin_user_delete(request, user_id):
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     today = now().date()
+
+    # === ✅ HANDLE USER ACTIONS ===
+    action = request.GET.get('action')
+    user_id = request.GET.get('id')
+    
+    if action in ['verify', 'suspend'] and user_id:
+        user = get_object_or_404(CustomUser, id=user_id)
+        
+        if action == 'verify':
+            user.is_verified = True
+            user.save()
+            # Send email
+            subject = "✅ Your account has been verified"
+            message = f"Hi {user.username},\n\nYour account has been successfully verified on Hirenix."
+            send_user_notification_email(subject, message, user.email)
+
+        elif action == 'suspend':
+            user.is_suspended = True
+            user.is_active = False  # Optional: deactivate login
+            user.save()
+            # Send email
+            subject = "⚠️ Your account has been suspended"
+            message = f"Hi {user.username},\n\nYour account has been suspended due to a policy violation. Contact support for details."
+            send_user_notification_email(subject, message, user.email)
+        
+        return redirect('admin_dashboard')  # Replace with your dashboard URL name
 
     # === 📊 USER STATISTICS ===
     total_users = CustomUser.objects.count()
@@ -895,19 +949,19 @@ def admin_dashboard(request):
 
     # === ❤️ MOST LIKED POSTS ===
     top_liked = (
-        Post.objects.annotate(like_count=Count('like_entries'))  # Replace 'like_entries' with your Like model related_name
+        Post.objects.annotate(like_count=Count('like_entries'))  # Replace with actual related_name
         .order_by('-like_count')[:5]
     )
 
     # === 💬 MOST COMMENTED POSTS ===
     top_commented = (
-        Post.objects.annotate(comment_count=Count('comments'))  # Replace 'comments' with your Comment model related_name
+        Post.objects.annotate(comment_count=Count('comments'))  # Replace with actual related_name
         .order_by('-comment_count')[:5]
     )
 
-    # === 🚀 TOP ACTIVE USERS === (based on post count)
+    # === 🚀 TOP ACTIVE USERS ===
     top_users = (
-        CustomUser.objects.annotate(post_count=Count('posts'))  # 'posts' = related_name in Post model
+        CustomUser.objects.annotate(post_count=Count('posts'))  # Replace with actual related_name
         .order_by('-post_count')[:5]
     )
 
@@ -919,7 +973,6 @@ def admin_dashboard(request):
         .order_by('hour')
     )
 
-    # === FINAL CONTEXT ===
     context = {
         'total_users': total_users,
         'active_users': active_users,

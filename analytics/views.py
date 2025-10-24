@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.db.models import Count
+from django.db.models import Count, Max
 from django.db.models.functions import TruncDay, TruncHour
 from django.utils.timezone import now, timedelta
 
@@ -17,19 +17,21 @@ def analytics_dashboard(request):
     suspended_users = CustomUser.objects.filter(is_suspended=True).count()
 
     # Weekly/Monthly Active Users
-    weekly_active_users = CustomUser.objects.filter(last_login__gte=today - timedelta(days=7)).count()
-    monthly_active_users = CustomUser.objects.filter(last_login__gte=today - timedelta(days=30)).count()
+    weekly_active_users = CustomUser.objects.filter(last_login__gte=today - timedelta(days=7), last_login__isnull=False).count()
+    monthly_active_users = CustomUser.objects.filter(last_login__gte=today - timedelta(days=30), last_login__isnull=False).count()
 
     # Signups Per Day
     signups = CustomUser.objects.annotate(day=TruncDay('date_joined')) \
         .values('day').annotate(count=Count('id')).order_by('day')
+    max_count = signups.aggregate(max_count=Max('count'))['max_count'] or 1
+    total_signups = sum(item['count'] for item in signups)
 
     # Top Posts
-    top_liked = Post.objects.annotate(like_count=Count('like')).order_by('-like_count')[:5]
-    top_commented = Post.objects.annotate(comment_count=Count('comment')).order_by('-comment_count')[:5]
+    top_liked = Post.objects.annotate(like_count=Count('like_entries')).order_by('-like_count')[:5]  # use your related_name
+    top_commented = Post.objects.annotate(comment_count=Count('comments')).order_by('-comment_count')[:5]  # use your related_name
 
     # Top Users by Post Count
-    top_users = CustomUser.objects.annotate(post_count=Count('post')).order_by('-post_count')[:5]
+    top_users = CustomUser.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:5]  # use your related_name
 
     # Heatmap Data (Hourly)
     hourly_activity = UserActivity.objects.annotate(hour=TruncHour('last_active')) \
@@ -42,6 +44,8 @@ def analytics_dashboard(request):
         'weekly_active_users': weekly_active_users,
         'monthly_active_users': monthly_active_users,
         'signups': list(signups),
+        'max_count': max_count,
+        'total_signups': total_signups,
         'top_liked': top_liked,
         'top_commented': top_commented,
         'top_users': top_users,

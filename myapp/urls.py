@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 from django.contrib.auth import views as auth_views
-from .views import analytics_dashboard
 
 urlpatterns = [
 
@@ -38,14 +37,14 @@ urlpatterns = [
     path('story/<int:story_id>/like/', views.like_story, name='like_story'),
     path('story/<int:story_id>/comment/', views.comment_story, name='comment_story'),
     path('story/<int:story_id>/share/', views.share_story, name='share_story'),
-    path('user-stories/<int:user_id>/', views.user_stories, name='user_stories'),
+    path('dashboard/', views.user_dashboard, name='user_dashboard'),
 
 
     # Post URLs
     path('like_post/<int:post_id>/', views.like_post, name='like_post'),
     path('add_comment/<int:post_id>/', views.add_comment, name='add_comment'),
     path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
-    path('dashboard/', analytics_dashboard, name='analytics_dashboard'),
+    path('dashboard/', views.user_dashboard, name='user_dashboard'),
 
     # messaging URLs
     path('messages/', views.messages_view, name='messages'),
