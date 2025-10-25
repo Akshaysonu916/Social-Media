@@ -215,3 +215,45 @@ class ProfileView(models.Model):
 
     def __str__(self):
         return f"{self.viewer.username} viewed {self.viewed_user.username}"
+    
+
+class CoverPhoto(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='cover_photos')
+    image = models.ImageField(upload_to='cover_photos/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
+
+class Badge(models.Model):
+    name = models.CharField(max_length=50)
+    icon = models.ImageField(upload_to='badges/')
+    requirement_type = models.CharField(max_length=20)  # 'posts', 'followers', 'verified'
+    requirement_value = models.IntegerField()
+
+
+class Highlight(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='highlights')
+    name = models.CharField(max_length=50)
+    cover_image = models.ImageField(upload_to='highlights/covers/', blank=True, null=True)
+    stories = models.ManyToManyField('Story', related_name='highlights')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_cover(self):
+        """
+        Returns the cover image:
+        - If user uploaded one, use it
+        - Otherwise, use first story image/video
+        """
+        if self.cover_image:
+            return self.cover_image.url
+        first_story = self.stories.first()
+        if first_story:
+            if first_story.image:
+                return first_story.image.url
+            elif first_story.video:
+                # Optional: Generate thumbnail or use placeholder
+                return '/static/images/video_placeholder.png'
+        return '/static/images/default_highlight.png'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.name}"

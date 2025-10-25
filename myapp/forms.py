@@ -57,3 +57,24 @@ class EventForm(forms.ModelForm):
         widgets = {
             'date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
+
+
+class HighlightCreateForm(forms.ModelForm):
+    stories = forms.ModelMultipleChoiceField(
+        queryset=Story.objects.none(),  # We'll set this in view per user
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
+
+    class Meta:
+        model = Highlight
+        fields = ['name', 'cover_image', 'stories']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Highlight Name'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['stories'].queryset = user.stories.all()

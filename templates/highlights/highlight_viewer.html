@@ -1,0 +1,47 @@
+{% extends 'home.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto mt-6 relative bg-black rounded-lg overflow-hidden">
+    <div id="highlight-carousel" class="relative">
+        {% for story in stories %}
+            <div class="carousel-item absolute inset-0 {% if forloop.first %}block{% else %}hidden{% endif %}">
+                {% if story.image %}
+                    <img src="{{ story.image.url }}" class="w-full h-96 object-cover">
+                {% elif story.video %}
+                    <video class="w-full h-96 object-cover" autoplay muted playsinline>
+                        <source src="{{ story.video.url }}" type="video/mp4">
+                    </video>
+                {% endif %}
+                <div class="absolute top-2 left-2 right-2 flex space-x-1">
+                    {% for s in stories %}
+                        <div class="h-1 bg-gray-500 flex-1 rounded" id="progress-{{ forloop.counter0 }}"></div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+let current = 0;
+const items = document.querySelectorAll('.carousel-item');
+const progressBars = document.querySelectorAll('[id^="progress-"]');
+const total = items.length;
+let duration = 5000; // 5 seconds per story
+
+function showNextStory() {
+    items[current].classList.add('hidden');
+    items[current].classList.remove('block');
+    progressBars[current].style.backgroundColor = '#bbb';
+    current++;
+    if(current >= total) current = 0;
+    items[current].classList.add('block');
+    items[current].classList.remove('hidden');
+    progressBars[current].style.backgroundColor = '#fff';
+    setTimeout(showNextStory, duration);
+}
+
+// Initialize first story
+progressBars[current].style.backgroundColor = '#fff';
+setTimeout(showNextStory, duration);
+</script>
+{% endblock %}

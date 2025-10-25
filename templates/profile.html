@@ -6,12 +6,20 @@
 {% block content %}
 <div class="max-w-4xl mx-auto my-8 bg-white rounded-lg shadow-md font-sans overflow-hidden">
 
-    <!-- Cover Photo -->
-    <div class="relative w-full h-56 bg-gray-200">
-        {% if profile_user.cover_photo %}
-            <img src="{{ profile_user.cover_photo.url }}" class="object-cover w-full h-full" alt="Cover Photo">
+    <!-- Cover Photo Slideshow -->
+    <div class="relative w-full h-56 overflow-hidden">
+        {% if cover_photos %}
+        <div class="swiper">
+            <div class="swiper-wrapper">
+                {% for photo in cover_photos %}
+                <div class="swiper-slide">
+                    <img src="{{ photo.image.url }}" class="w-full h-56 object-cover">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
         {% else %}
-            <div class="flex items-center justify-center w-full h-full text-gray-500">No Cover Photo</div>
+            <div class="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500">No Cover Photo</div>
         {% endif %}
 
         {% if request.user == profile_user %}
@@ -22,7 +30,7 @@
     <div class="p-8">
 
         <!-- Profile Header -->
-        <div class="flex items-center gap-5 mb-8" id="profile-header">
+        <div class="flex items-center gap-5 mb-8 rounded-md p-4" style="background-color: {{ profile_user.theme_color|default:'#3b82f6' }};" id="profile-header">
             <div class="w-32 h-32 rounded-full border-2 border-gray-300 overflow-hidden -mt-16 bg-white">
                 {% if profile_user.profile_picture %}
                     <img src="{{ profile_user.profile_picture.url }}" alt="Profile Picture" class="w-full h-full object-cover">
@@ -56,6 +64,15 @@
                     </a>
                 </div>
 
+                <!-- Profile Badges -->
+                {% if user_badges %}
+                <div class="flex gap-2 mt-4">
+                    {% for badge in user_badges %}
+                        <img src="{{ badge.icon.url }}" alt="{{ badge.name }}" title="{{ badge.name }}" class="w-8 h-8">
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- Follow / Message Buttons -->
                 {% if request.user != profile_user %}
                 <div class="flex gap-2 mt-4">
@@ -81,15 +98,37 @@
                 <div class="mt-4 flex flex-wrap gap-2">
                     <a href="{% url 'user_dashboard' %}" class="px-4 py-2 bg-indigo-600 text-white rounded-md font-medium">📊 Dashboard</a>
                     <a href="{% url 'change_password' %}" class="px-4 py-2 bg-yellow-500 text-white rounded-md font-medium">Change Password</a>
-                    <a href="{% url 'home' %}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Back to Home</a>
+                    <a href="{% url 'profile' username=request.user.username %}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Back to Profile</a>
                     <a href="{% url 'logout' %}" class="px-4 py-2 bg-red-500 text-white rounded-md font-medium">Logout</a>
                 </div>
                 {% endif %}
             </div>
         </div>
 
+        <!-- HIGHLIGHTS SECTION -->
+        <div class="mt-6">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-semibold">Highlights</h3>
+                {% if request.user == profile_user %}
+                <button id="new-highlight-btn" class="px-3 py-1 bg-blue-600 text-white text-sm rounded-md">+ New Highlight</button>
+                {% endif %}
+            </div>
+            <div class="flex gap-4 overflow-x-auto py-2">
+                {% for highlight in profile_user.highlights.all %}
+                <div class="flex flex-col items-center flex-shrink-0">
+                    <button onclick="openHighlightModal({{ highlight.id }})" class="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-300 focus:outline-none">
+                        <img src="{{ highlight.get_cover }}" class="w-full h-full object-cover">
+                    </button>
+                    <span class="text-sm mt-1 truncate w-20 text-center">{{ highlight.name }}</span>
+                </div>
+                {% empty %}
+                <p class="text-gray-400 text-sm">No highlights yet</p>
+                {% endfor %}
+            </div>
+        </div>
+
         <!-- Profile Details -->
-        <div id="profile-details" class="space-y-4">
+        <div id="profile-details" class="space-y-4 mt-6">
             <div class="flex justify-between py-2 border-b border-gray-200">
                 <div class="font-medium text-gray-500">Email</div>
                 <div class="text-gray-800">{{ profile_user.email }}</div>
@@ -107,50 +146,6 @@
                 <div class="text-gray-800">{{ profile_user.bio }}</div>
             </div>
         </div>
-
-        <!-- Edit Profile Form -->
-        {% if request.user == profile_user %}
-        <div id="edit-form" class="hidden mt-8">
-            <h3 class="text-xl font-semibold mb-4">Edit Profile</h3>
-            <form method="POST" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="flex flex-col gap-4">
-                    <div>
-                        <label class="font-medium text-gray-500">Cover Photo</label>
-                        <input type="file" name="cover_photo" accept="image/*" class="border rounded p-1 w-full">
-                    </div>
-                    <div>
-                        <label class="font-medium text-gray-500">Profile Picture</label>
-                        <input type="file" name="profile_picture" accept="image/*" class="border rounded p-1 w-full">
-                    </div>
-                    <div>
-                        <label class="font-medium text-gray-500">Name</label>
-                        <input type="text" name="name" value="{{ profile_user.get_full_name|default:profile_user.username }}" class="border rounded p-1 w-full">
-                    </div>
-                    <div>
-                        <label class="font-medium text-gray-500">Email</label>
-                        <input type="email" name="email" value="{{ profile_user.email }}" class="border rounded p-1 w-full">
-                    </div>
-                    <div>
-                        <label class="font-medium text-gray-500">Location</label>
-                        <input type="text" name="location" value="{{ profile_user.location }}" class="border rounded p-1 w-full">
-                    </div>
-                    <div>
-                        <label class="font-medium text-gray-500">Bio</label>
-                        <textarea name="bio" class="border rounded p-1 w-full h-24">{{ profile_user.bio }}</textarea>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" name="is_public" class="form-checkbox h-5 w-5 text-blue-600" {% if profile_user.is_public %}checked{% endif %}>
-                        <span class="text-sm">Public Profile</span>
-                    </div>
-                </div>
-                <div class="mt-4 flex gap-2">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Save Changes</button>
-                    <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Cancel</button>
-                </div>
-            </form>
-        </div>
-        {% endif %}
 
         <!-- Recent Posts -->
         <div class="mt-10">
@@ -185,22 +180,51 @@
     </div>
 </div>
 
+<!-- CREATE HIGHLIGHT MODAL -->
+<div id="createHighlightModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 max-w-md p-6 rounded-lg relative">
+        <button onclick="document.getElementById('createHighlightModal').classList.add('hidden')" class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
+        <h3 class="text-lg font-semibold mb-4">Create New Highlight</h3>
+        <form method="POST" enctype="multipart/form-data" action="{% url 'create_highlight' %}">
+            {% csrf_token %}
+            <div class="flex flex-col gap-3">
+                <input type="text" name="name" placeholder="Highlight Name" class="border rounded p-2 w-full" required>
+                <input type="file" name="stories" multiple accept="image/*,video/*" class="border rounded p-2 w-full" required>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Create</button>
+                <button type="button" onclick="document.getElementById('createHighlightModal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- HIGHLIGHT VIEW MODAL -->
+<div id="highlightModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50">
+    <div class="bg-white w-11/12 max-w-2xl p-4 rounded-lg relative">
+        <button onclick="closeHighlightModal()" class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 text-xl font-bold">&times;</button>
+        <div id="carouselContainer"></div>
+    </div>
+</div>
+
 <!-- JS Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
 <script>
+    // Initialize Swiper for cover photos
+    const swiper = new Swiper('.swiper', { loop: true, autoplay: { delay: 3000 }, slidesPerView: 1 });
+
     // Edit Profile Toggle
     const editBtn = document.getElementById('edit-profile-btn');
     const cancelBtn = document.getElementById('cancel-edit-btn');
     const editForm = document.getElementById('edit-form');
     const profileDetails = document.getElementById('profile-details');
     const profileHeader = document.getElementById('profile-header');
-
     if (editBtn && cancelBtn && editForm && profileDetails && profileHeader) {
         editBtn.addEventListener('click', () => {
             editForm.classList.remove('hidden');
             profileDetails.classList.add('hidden');
             profileHeader.classList.add('hidden');
         });
-
         cancelBtn.addEventListener('click', () => {
             editForm.classList.add('hidden');
             profileDetails.classList.remove('hidden');
@@ -214,32 +238,43 @@
         followBtn.addEventListener('click', () => {
             fetch("{% url 'follow-toggle' %}", {
                 method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/json"
-                },
+                headers: { "X-CSRFToken": "{{ csrf_token }}", "Content-Type": "application/json" },
                 body: JSON.stringify({ user_id: followBtn.dataset.userId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                followBtn.innerText = data.action === "followed" ? "Following" : "Follow";
-            });
+            }).then(res => res.json())
+              .then(data => { followBtn.innerText = data.action === "followed" ? "Following" : "Follow"; });
         });
     }
 
     // Pin Post AJAX
     document.querySelectorAll('.pin-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            fetch(`/pin-post/${btn.dataset.id}/`, {
-                method: 'POST',
-                headers: {'X-CSRFToken': '{{ csrf_token }}'}
-            })
+            fetch(`/pin-post/${btn.dataset.id}/`, { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'} })
             .then(res => res.json())
-            .then(data => {
-                if(data.status === 'ok') location.reload();
-            });
+            .then(data => { if(data.status === 'ok') location.reload(); });
         });
     });
-</script>
 
+    // Highlight Modal Functions
+    function openHighlightModal(highlightId) {
+        fetch(`/highlights/view/${highlightId}/`)
+        .then(res => res.text())
+        .then(html => {
+            document.getElementById('carouselContainer').innerHTML = html;
+            document.getElementById('highlightModal').classList.remove('hidden');
+            new Swiper('.highlight-swiper', { loop: true, autoplay: { delay: 5000 }, slidesPerView: 1 });
+        });
+    }
+    function closeHighlightModal() {
+        document.getElementById('highlightModal').classList.add('hidden');
+        document.getElementById('carouselContainer').innerHTML = '';
+    }
+
+    // New Highlight Button
+    const newHighlightBtn = document.getElementById('new-highlight-btn');
+    if (newHighlightBtn) {
+        newHighlightBtn.addEventListener('click', () => {
+            document.getElementById('createHighlightModal').classList.remove('hidden');
+        });
+    }
+</script>
 {% endblock %}

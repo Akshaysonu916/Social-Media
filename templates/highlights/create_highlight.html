@@ -1,0 +1,26 @@
+{% extends 'home.html' %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 bg-white p-6 rounded-lg shadow">
+    <h2 class="text-xl font-semibold mb-4">Create Highlight</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="mb-4">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+            {{ form.name.errors }}
+        </div>
+        <div class="mb-4">
+            {{ form.cover_image.label_tag }}
+            {{ form.cover_image }}
+            {{ form.cover_image.errors }}
+        </div>
+        <div class="mb-4">
+            <label class="font-medium mb-2 block">Select Stories:</label>
+            {{ form.stories }}
+            {{ form.stories.errors }}
+        </div>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Create Highlight</button>
+    </form>
+</div>
+{% endblock %}

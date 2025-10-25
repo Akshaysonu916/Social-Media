@@ -25,8 +25,9 @@ urlpatterns = [
 
 
     # profile URLs
-    path('profile/', views.profile, name='profile'),
+    path('profile/<str:username>/', views.profile, name='profile'),
     path('profile/<str:username>/', views.profile, name='user_profile'),
+    
 
 
 
@@ -37,7 +38,7 @@ urlpatterns = [
     path('story/<int:story_id>/like/', views.like_story, name='like_story'),
     path('story/<int:story_id>/comment/', views.comment_story, name='comment_story'),
     path('story/<int:story_id>/share/', views.share_story, name='share_story'),
-    path('dashboard/', views.user_dashboard, name='user_dashboard'),
+    path('stories/<int:user_id>/', views.user_stories, name='user_stories'),
 
 
     # Post URLs
@@ -112,4 +113,10 @@ urlpatterns = [
     # users profile urls
     path('follow-toggle/', views.follow_toggle, name='follow-toggle'),
     path('pin-post/<int:post_id>/', views.pin_post, name='pin-post'),
+
+
+    path('highlights/create/', views.create_highlight, name='create_highlight'),
+    path('highlights/add/<int:story_id>/', views.add_story_to_highlight, name='add_story_to_highlight'),
+    path('highlights/<str:username>/', views.view_highlights, name='view_highlights'),
+    path('highlights/view/<int:highlight_id>/', views.highlight_viewer, name='highlight_viewer'),
 ]

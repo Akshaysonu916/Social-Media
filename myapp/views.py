@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate , get_user_model
 from django.shortcuts import get_object_or_404
-from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm, PostForm , EventForm
+from .forms import CustomUserCreationForm, CustomLoginForm, StoryForm, PostForm , EventForm,HighlightCreateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -155,7 +155,7 @@ def profile(request, username=None):
         profile_user.is_public = True if is_public == 'on' else False
 
         profile_user.save()
-        return redirect('profile')
+        return redirect('profile', username=profile_user.username)
 
     # 📊 Followers and following count
     followers_count = Follow.objects.filter(following=profile_user).count()
@@ -1024,3 +1024,76 @@ def pin_post(request, post_id):
     post.pinned = True
     post.save()
     return JsonResponse({"status": "ok"})
+
+
+
+
+
+
+# -----------------------------
+# Profile Page: Create Highlight
+# -----------------------------
+@login_required
+def create_highlight(request):
+    if request.method == 'POST':
+        form = HighlightCreateForm(request.POST, user=request.user)
+        files = request.FILES.getlist('stories')  # get all uploaded files
+
+        if form.is_valid():
+            highlight = form.save(commit=False)
+            highlight.user = request.user
+            highlight.save()  # save highlight first
+
+            # Save each uploaded story
+            for f in files:
+                Story.objects.create(highlight=highlight, media=f)
+
+            messages.success(request, 'Highlight created successfully!')
+            return redirect('profile', username=request.user.username)
+
+    else:
+        form = HighlightCreateForm(user=request.user)
+
+    return render(request, 'highlights/create_highlight.html', {'form': form})
+# -----------------------------
+# Story Viewer: Add single story to highlight
+# -----------------------------
+@login_required
+def add_story_to_highlight(request, story_id):
+    story = get_object_or_404(Story, id=story_id, user=request.user)
+
+    if request.method == 'POST':
+        form = HighlightCreateForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            highlight = form.save(commit=False)
+            highlight.user = request.user
+            highlight.save()
+            highlight.stories.add(story)  # Add the current story
+            form.save_m2m()
+            messages.success(request, f'Story added to highlight "{highlight.name}"!')
+            return redirect('story_viewer', story_id=story.id)
+    else:
+        # Pre-select the story in the form
+        form = HighlightCreateForm(user=request.user, initial={'stories': [story]})
+
+    return render(request, 'highlights/add_story_to_highlight.html', {'form': form, 'story': story})
+
+
+# -----------------------------
+# Profile Page: View Highlights
+# -----------------------------
+@login_required
+def view_highlights(request, username):
+    user = get_object_or_404(User, username=username)
+    highlights = user.highlights.all().order_by('-created_at')
+    return render(request, 'highlights/view_highlights.html', {'highlights': highlights, 'profile_user': user})
+
+
+# -----------------------------
+# Highlight Viewer (clicking a highlight)
+# -----------------------------
+@login_required
+def highlight_viewer(request, highlight_id):
+    highlight = get_object_or_404(Highlight, id=highlight_id)
+    stories = highlight.stories.all().order_by('created_at')
+    return render(request, 'highlights/highlight_viewer.html', {'highlight': highlight, 'stories': stories})
