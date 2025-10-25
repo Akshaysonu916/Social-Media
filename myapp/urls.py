@@ -109,5 +109,7 @@ urlpatterns = [
     path('admin_dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin_users/<int:user_id>/profile/', views.admin_user_profile, name='admin_user_profile'),
 
-
+    # users profile urls
+    path('follow-toggle/', views.follow_toggle, name='follow-toggle'),
+    path('pin-post/<int:post_id>/', views.pin_post, name='pin-post'),
 ]

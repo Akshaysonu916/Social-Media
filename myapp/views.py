@@ -992,3 +992,35 @@ def admin_dashboard(request):
 def admin_user_profile(request, user_id):
     user = get_object_or_404(CustomUser, id=user_id)
     return render(request, 'admin_user_profile.html', {'user': user})
+
+
+
+# users profile views
+@login_required
+@require_POST
+def follow_toggle(request):
+    user_id = request.POST.get("user_id")
+    target_user = get_object_or_404(CustomUser, id=user_id)
+
+    # Check if already following
+    follow_instance = Follow.objects.filter(follower=request.user, following=target_user).first()
+    if follow_instance:
+        follow_instance.delete()
+        action = "unfollowed"
+    else:
+        Follow.objects.create(follower=request.user, following=target_user)
+        action = "followed"
+
+    return JsonResponse({"status": "ok", "action": action})
+
+
+
+@login_required
+@require_POST
+def pin_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id, user=request.user)
+    # Unpin all other posts
+    Post.objects.filter(user=request.user, pinned=True).update(pinned=False)
+    post.pinned = True
+    post.save()
+    return JsonResponse({"status": "ok"})
