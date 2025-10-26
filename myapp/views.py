@@ -29,14 +29,6 @@ from myapp.utils import send_user_notification_email
 def home_view(request):
     now = timezone.now()
 
-    # Get recent stories (last 24 hrs)
-    stories = Story.objects.filter(
-        created_at__gte=now - timedelta(hours=24)
-    ).select_related('user').order_by('user', '-created_at')
-
-    # Get all posts ordered by newest first
-    posts = Post.objects.all().order_by('-created_at')
-
     # Handle post creation
     post_form = PostForm()
     if request.method == 'POST':
@@ -47,13 +39,23 @@ def home_view(request):
             new_post.save()
             return redirect('home')
 
+    # Get all posts ordered by newest first
+    posts = Post.objects.all().order_by('-created_at').prefetch_related('like_entries', 'comments', 'user')
+
+    # Add liked_by_user boolean for template
+    for post in posts:
+        post.liked_by_user = post.like_entries.filter(user=request.user).exists()
+
+    # Get recent stories (last 24 hrs)
+    stories = Story.objects.filter(
+        created_at__gte=now - timedelta(hours=24)
+    ).select_related('user').order_by('user', '-created_at')
+
     # Group stories by user
-    story_groups = []
-    user_stories_dict = defaultdict(list)
+    story_groups_dict = defaultdict(list)
     for story in stories:
-        user_stories_dict[story.user].append(story)
-    for user, user_stories in user_stories_dict.items():
-        story_groups.append((user, user_stories))
+        story_groups_dict[story.user].append(story)
+    story_groups = [(user, user_stories) for user, user_stories in story_groups_dict.items()]
 
     # Suggest users to follow (exclude self + already followed)
     following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
@@ -1097,3 +1099,28 @@ def highlight_viewer(request, highlight_id):
     highlight = get_object_or_404(Highlight, id=highlight_id)
     stories = highlight.stories.all().order_by('created_at')
     return render(request, 'highlights/highlight_viewer.html', {'highlight': highlight, 'stories': stories})
+
+
+
+
+
+@require_POST
+@login_required
+def toggle_like(request, post_id):
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({'error': 'Post not found'}, status=404)
+
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+    if not created:
+        # User already liked → unlike
+        like.delete()
+        liked = False
+    else:
+        liked = True
+
+    return JsonResponse({
+        'liked': liked,
+        'like_count': post.like_entries.count(),
+    })
