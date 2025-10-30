@@ -69,6 +69,9 @@ def home_view(request):
     }
     return render(request, 'home.html', context)
 
+
+#authentication Views
+
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -257,8 +260,9 @@ def watch_view(request):
 def memories_view(request):
     return render(request, 'memories.html')
 
-
+#=========================
 # story views
+#=========================
 @login_required
 def create_story(request):
     """
@@ -399,6 +403,10 @@ def share_story(request, story_id):
     return JsonResponse({'success': True, 'message': 'Story shared!'})
 
 
+
+#=======================
+#Post views
+#=======================
 @login_required
 @require_POST
 def like_post(request, post_id):
