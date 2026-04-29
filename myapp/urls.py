@@ -26,7 +26,6 @@ urlpatterns = [
 
     # profile URLs
     path('profile/<str:username>/', views.profile, name='profile'),
-    path('profile/<str:username>/', views.profile, name='user_profile'),
     
 
 
@@ -60,7 +59,7 @@ urlpatterns = [
     path('users/', views.users_list, name='users_list'),
     path('follow/', views.follow_user, name='follow_user'),
     path('unfollow/', views.unfollow_user, name='unfollow_user'),
-    path('profile/<str:username>/', views.profile_detail, name='profile_detail'),
+    path('profile-detail/<str:username>/', views.profile_detail, name='profile_detail'),
     path('followers/<str:username>/', views.follower_list, name='follower_list'),
     path('following/<str:username>/', views.following_list, name='following_list'),
     path('follow/<int:user_id>/', views.homefollow_user, name='homefollow_user'),

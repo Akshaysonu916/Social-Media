@@ -1,0 +1,11 @@
+{% extends 'navbar.html' %}
+{% block content %}
+<div class="container mx-auto py-8 px-4">
+    <h1 class="text-2xl font-bold mb-4">Search Results for "{{ query }}"</h1>
+    {% if query %}
+        <p class="text-gray-500">No results found for "{{ query }}".</p>
+    {% else %}
+        <p class="text-gray-500">Enter a search term above to find users or posts.</p>
+    {% endif %}
+</div>
+{% endblock %}

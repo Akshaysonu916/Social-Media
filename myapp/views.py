@@ -175,12 +175,36 @@ def profile(request, username=None):
         timestamp__gte=now() - timedelta(days=7)
     ).count()
 
+    # 🖼️ Cover photos
+    cover_photos = profile_user.cover_photos.all().order_by('-uploaded_at')
+
+    # 🏅 Badges (all badges that meet the user's stats)
+    user_badges = Badge.objects.filter(
+        requirement_type='followers',
+        requirement_value__lte=followers_count
+    ) | Badge.objects.filter(
+        requirement_type='posts',
+        requirement_value__lte=recent_posts.count()
+    )
+
+    # 🤝 Mutual follows (people both follow each other)
+    if request.user != profile_user:
+        viewer_following_ids = Follow.objects.filter(follower=request.user).values_list('following_id', flat=True)
+        mutuals = CustomUser.objects.filter(
+            id__in=Follow.objects.filter(follower=profile_user).values_list('following_id', flat=True)
+        ).filter(id__in=viewer_following_ids).exclude(id=request.user.id)[:3]
+    else:
+        mutuals = []
+
     context = {
         'profile_user': profile_user,
         'followers_count': followers_count,
         'following_count': following_count,
         'recent_posts': recent_posts,
         'recent_views_count': recent_views_count,
+        'cover_photos': cover_photos,
+        'user_badges': user_badges,
+        'mutuals': mutuals,
     }
 
     return render(request, 'profile.html', context)
@@ -233,6 +257,7 @@ def user_dashboard(request):   # renamed from analytics_dashboard
 
     return render(request, 'analytics.html', context)
 
+@login_required
 def notifications(request):
     return render(request, 'notifications.html')
 
@@ -674,15 +699,16 @@ def users_list(request):
 def follow_user(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
-        target_user = CustomUser.objects.get(id=user_id)
+        try:
+            target_user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'status': 'user_not_found'}, status=404)
         follow, created = Follow.objects.get_or_create(follower=request.user, following=target_user)
 
-        if not created and follow.is_accepted:
+        if not created:
             return JsonResponse({'status': 'already_following'})
-        elif not created and not follow.is_accepted:
-            return JsonResponse({'status': 'request_pending'})
 
-        return JsonResponse({'status': 'follow_request_sent'})
+        return JsonResponse({'status': 'now_following'})
 
 @login_required
 def unfollow_user(request):
@@ -751,9 +777,7 @@ def homefollow_user(request, user_id):
         Follow.objects.get_or_create(follower=request.user, following=user_to_follow)
     return redirect('home')
 
-def post_detail(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-    return render(request, 'post_detail.html', {'post': post})
+# NOTE: post_detail with PostView tracking is defined above at line ~461. This duplicate is removed.
 
 
 
@@ -794,6 +818,7 @@ def gaming_view(request):
 
 
 # events views
+@login_required
 def events_view(request):
     events = Event.objects.all().order_by('-date')
     
@@ -1054,9 +1079,10 @@ def create_highlight(request):
             highlight.user = request.user
             highlight.save()  # save highlight first
 
-            # Save each uploaded story
+            # Save each uploaded file as a Story and link to this highlight
             for f in files:
-                Story.objects.create(highlight=highlight, media=f)
+                story = Story.objects.create(user=request.user, image=f)
+                highlight.stories.add(story)
 
             messages.success(request, 'Highlight created successfully!')
             return redirect('profile', username=request.user.username)

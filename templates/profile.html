@@ -177,6 +177,48 @@
             {% endif %}
         </div>
 
+        <!-- Edit Profile Form (hidden, toggled by JS Edit Profile button) -->
+        {% if request.user == profile_user %}
+        <form id="edit-form" method="POST" enctype="multipart/form-data" class="hidden mt-6 space-y-4 border rounded-lg p-4 bg-gray-50">
+            {% csrf_token %}
+            <h3 class="text-lg font-semibold mb-2">Edit Profile</h3>
+            <div class="grid grid-cols-1 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" name="name" value="{{ profile_user.get_full_name }}" class="w-full border rounded px-3 py-2 text-sm" placeholder="Full Name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" value="{{ profile_user.email }}" class="w-full border rounded px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input type="text" name="location" value="{{ profile_user.location }}" class="w-full border rounded px-3 py-2 text-sm" placeholder="Location">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                    <textarea name="bio" rows="3" class="w-full border rounded px-3 py-2 text-sm" placeholder="Tell something about yourself...">{{ profile_user.bio }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Profile Picture</label>
+                    <input type="file" name="profile_picture" accept="image/*" class="text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cover Photo</label>
+                    <input type="file" name="cover_photo" accept="image/*" class="text-sm">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="is_public" id="is_public_check" {% if profile_user.is_public %}checked{% endif %} class="rounded">
+                    <label for="is_public_check" class="text-sm text-gray-700">Public Profile</label>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium">Save Changes</button>
+                <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md font-medium">Cancel</button>
+            </div>
+        </form>
+        {% endif %}
+
     </div>
 </div>
 

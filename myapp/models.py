@@ -82,6 +82,7 @@ class Post(models.Model):
     content = models.TextField(max_length=500)
     image = models.ImageField(upload_to='post_images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    pinned = models.BooleanField(default=False)  # ✅ Added: used by pin_post view
 
     def total_likes(self):
         return self.like_entries.count()
@@ -170,6 +171,7 @@ class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following_set', on_delete=models.CASCADE)
     following = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers_set', on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
+    is_accepted = models.BooleanField(default=True)  # ✅ Added: used by follow_user view
 
     class Meta:
         unique_together = ('follower', 'following')
@@ -196,7 +198,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     featured = models.BooleanField(default=False)
 
-    def _str_(self):
+    def __str__(self):  # ✅ Fixed: was _str_ (missing double underscores)
         return self.title
 
     @property
