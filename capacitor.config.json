@@ -1,0 +1,9 @@
+{
+  "appId": "com.socialmedia.app",
+  "appName": "SocialApp",
+  "webDir": "static",
+  "server": {
+    "url": "https://your-social-app.com",
+    "cleartext": true
+  }
+}

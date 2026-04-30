@@ -1,3 +1,32 @@
+# Virtual Environment
 myenv/
-_pycache_/
-db.sqlite3/
+venv/
+ENV/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+
+# Node.js (Capacitor)
+node_modules/
+dist/
+platforms/
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+local_settings.py
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android/Capacitor specific
+android/app/build
+android/app/src/main/assets/public
+android/capacitor-cordova-android-plugins

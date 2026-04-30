@@ -1,0 +1,100 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": ["Hi", "How are you", "Is anyone there?", "Hello", "Good day", "Hey"],
+      "responses": ["Hello!", "Good to see you again!", "Hi there, how can I help?"],
+      "context": [""]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["Bye", "See you later", "Goodbye", "I am leaving", "Have a Good day"],
+      "responses": ["See you later, thanks for visiting", "Have a nice day", "Bye! Come back again soon."],
+      "context": [""]
+    },
+    {
+      "tag": "thanks",
+      "patterns": ["Thanks", "Thank you", "That's helpful", "Awesome, thanks", "Thanks for helping me"],
+      "responses": ["Happy to help!", "Anytime!", "My pleasure"],
+      "context": [""]
+    },
+    {
+      "tag": "noanswer",
+      "patterns": [],
+      "responses": ["Sorry, I don't understand that.", "Please give me more info", "Not sure I understand"],
+      "context": [""]
+    },
+    {
+      "tag": "platform_info",
+      "patterns": ["What is this platform about?", "What does this site do?", "Tell me about this app"],
+      "responses": ["This is a social media platform for connecting users and sharing content."],
+      "context": [""]
+    },
+    {
+      "tag": "posting",
+      "patterns": ["How do I post something?", "How to create a post?", "Where is the post button?"],
+      "responses": ["Go to the home page and click the plus icon to post."],
+      "context": [""]
+    },
+    {
+      "tag": "profile_picture",
+      "patterns": ["Can I change my profile picture?", "How to update my photo?", "Edit profile image"],
+      "responses": ["Yes, go to your profile settings to change your picture."],
+      "context": [""]
+    },
+    {
+      "tag": "features",
+      "patterns": ["What features should I prioritize?", "What are the main features?", "Help with social media app features"],
+      "responses": ["Consider prioritizing features like user profiles, newsfeed, posting (text, images, videos), commenting, liking, and sharing. Also, think about user authentication, notification systems, and content moderation."],
+      "context": [""]
+    },
+    {
+      "tag": "privacy",
+      "patterns": ["How can I ensure user data privacy?", "Data security help", "Is my data safe?"],
+      "responses": ["Implement robust data encryption, secure authentication protocols (e.g., OAuth), and comply with data protection regulations (e.g., GDPR, CCPA). Regularly update and patch your app to prevent vulnerabilities."],
+      "context": [""]
+    },
+    {
+      "tag": "creator",
+      "patterns": ["Who created you?", "Who built this bot?", "Who is the developer?"],
+      "responses": ["I was built by a developer using Python and Django! My creators are Akshay Aneesh and Abhishek Manoj."],
+      "context": [""]
+    },
+    {
+      "tag": "name",
+      "patterns": ["What is your name?", "Who are you?", "What should I call you?"],
+      "responses": ["I'm your virtual assistant chatbot."],
+      "context": [""]
+    },
+    {
+      "tag": "joke",
+      "patterns": ["Tell me a joke", "Do you know any jokes?", "Make me laugh"],
+      "responses": ["Why don’t programmers like nature? It has too many bugs!"],
+      "context": [""]
+    },
+    {
+      "tag": "django_info",
+      "patterns": ["What is Django?", "Tell me about Django", "Why use Django?"],
+      "responses": ["Django is a high-level Python web framework that encourages rapid development and clean, pragmatic design."],
+      "context": [""]
+    },
+    {
+      "tag": "python_info",
+      "patterns": ["What is Python?", "Tell me about Python", "Why Python?"],
+      "responses": ["Python is a popular programming language known for its readability and simplicity."],
+      "context": [""]
+    },
+    {
+      "tag": "password_reset",
+      "patterns": ["How can I reset my password?", "Forgot password", "Change password"],
+      "responses": ["You can reset your password from your account settings or click 'Forgot Password' on the login page."],
+      "context": [""]
+    },
+    {
+      "tag": "messages",
+      "patterns": ["Where can I find my messages?", "How to see my inbox?", "Show my chats"],
+      "responses": ["You can view your messages from the Messages section in the sidebar."],
+      "context": [""]
+    }
+  ]
+}

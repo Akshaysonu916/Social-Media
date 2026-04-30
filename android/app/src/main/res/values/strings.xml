@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SocialApp</string>
+    <string name="title_activity_main">SocialApp</string>
+    <string name="package_name">com.socialmedia.app</string>
+    <string name="custom_url_scheme">com.socialmedia.app</string>
+</resources>
